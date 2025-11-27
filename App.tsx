@@ -179,6 +179,11 @@ export default function App() {
   const [confirmModalMessage, setConfirmModalMessage] = useState('');
   const [confirmModalAction, setConfirmModalAction] = useState<(() => void) | null>(null);
 
+  // --- MOBILE STATE ---
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [bookmarkSlideIndex, setBookmarkSlideIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [isDetailPanelModal, setIsDetailPanelModal] = useState(false);
 
   const activeTable = tables.find(t => t.id === activeTableId);
   const visibleColumns = activeTable?.columns.filter(c => !c.isHidden) || [];
@@ -214,11 +219,40 @@ export default function App() {
     loadDataFromDB();
   }, []);
 
+  // --- MOBILE WINDOW RESIZE LISTENER ---
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Reset lock and filter when table changes
   useEffect(() => {
     setIsDeleteLocked(true);
     setActiveFilterId(null);
   }, [activeTableId]);
+
+  // --- MOBILE TOUCH HANDLERS ---
+  const handleBookmarkTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleBookmarkTouchEnd = (e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0 && bookmarkSlideIndex < bookmarks.length - 1) {
+        setBookmarkSlideIndex(bookmarkSlideIndex + 1);
+      } else if (diff < 0 && bookmarkSlideIndex > 0) {
+        setBookmarkSlideIndex(bookmarkSlideIndex - 1);
+      }
+    }
+  };
 
   // --- FILTER HELPER FUNCTIONS ---
 
@@ -842,13 +876,202 @@ export default function App() {
     </div>
   );
 
+  // --- MOBILE LAYOUT ---
+  if (isMobile) {
+    const currentBookmarkGroup = bookmarks[bookmarkSlideIndex];
+    const selectedRow = activeTable?.rows.find(r => r.id === selectedRowId);
+
+    return (
+      <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans overflow-hidden">
+
+        {/* Mobile Header */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold">업무통합관리</h1>
+          <button
+            onClick={() => setIsTableModalOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Mobile Bookmark Slider */}
+        {bookmarks.length > 0 && (
+          <div
+            className="bg-gradient-to-b from-blue-50 to-pink-50 p-4 border-b border-gray-200"
+            onTouchStart={handleBookmarkTouchStart}
+            onTouchEnd={handleBookmarkTouchEnd}
+          >
+            <div className="mb-3">
+              <p className="text-xs text-gray-600 font-medium mb-2">
+                {currentBookmarkGroup?.name || '북마크'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {currentBookmarkGroup?.items.map(item => (
+                  <div
+                    key={item.id}
+                    className="px-3 py-1 bg-white rounded-lg text-sm font-medium border border-gray-200 shadow-sm"
+                  >
+                    {item.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Slide Indicators */}
+            <div className="flex justify-center gap-1">
+              {bookmarks.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setBookmarkSlideIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    idx === bookmarkSlideIndex ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Table Content */}
+          <div className="w-full overflow-x-auto">
+            {activeTable && (
+              <table className="w-full border-collapse bg-white">
+                <thead className="sticky top-0 bg-purple-600 text-white">
+                  <tr>
+                    {visibleColumns.map(col => (
+                      <th
+                        key={col.id}
+                        className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap"
+                        style={{ width: `${col.width}px`, minWidth: `${col.width}px` }}
+                      >
+                        {col.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.map((row, idx) => (
+                    <tr
+                      key={row.id}
+                      onClick={() => {
+                        setSelectedRowId(row.id);
+                        setIsDetailPanelModal(true);
+                      }}
+                      className={`border-b cursor-pointer hover:bg-gray-100 transition-colors ${
+                        selectedRowId === row.id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      {visibleColumns.map(col => (
+                        <td
+                          key={col.id}
+                          className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis"
+                          style={{ width: `${col.width}px`, minWidth: `${col.width}px` }}
+                        >
+                          {String(row[col.id] || '-')}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Table Tab Bar */}
+        <div className="bg-white border-t border-gray-200 px-2 py-2 flex gap-1 overflow-x-auto">
+          {tables.map(table => (
+            <button
+              key={table.id}
+              onClick={() => setActiveTableId(table.id)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTableId === table.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {table.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile Detail Panel Modal */}
+        {isDetailPanelModal && selectedRow && activeTable && (
+          <div className="fixed inset-0 bg-black/50 flex items-end z-50 animate-in fade-in">
+            <div className="bg-white w-full rounded-t-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom">
+              {/* Modal Header */}
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-gray-800">상세 정보</h2>
+                <button
+                  onClick={() => {
+                    setIsDetailPanelModal(false);
+                    setSelectedRowId(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <DetailPanel
+                  tableName={activeTable.name}
+                  row={selectedRow}
+                  columns={activeTable.columns}
+                  isOpen={isDetailPanelModal}
+                  onClose={() => {
+                    setIsDetailPanelModal(false);
+                    setSelectedRowId(null);
+                  }}
+                  onUpdate={(updatedRow) => {
+                    const updatedTable = {
+                      ...activeTable,
+                      rows: activeTable.rows.map(r => r.id === updatedRow.id ? updatedRow : r)
+                    };
+                    setTables(tables.map(t => t.id === activeTable.id ? updatedTable : t));
+                  }}
+                  onDeleteRow={(rowId) => {
+                    const updatedTable = {
+                      ...activeTable,
+                      rows: activeTable.rows.filter(r => r.id !== rowId)
+                    };
+                    setTables(tables.map(t => t.id === activeTable.id ? updatedTable : t));
+                    setIsDetailPanelModal(false);
+                    setSelectedRowId(null);
+                  }}
+                  categories={categories}
+                  categoryInputType={categoryInputType}
+                  setIsConfirmModalOpen={setIsConfirmModalOpen}
+                  setConfirmModalMessage={setConfirmModalMessage}
+                  setConfirmModalAction={setConfirmModalAction}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Table Creation Modal (shared with desktop) */}
+        {isTableModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm md:flex hidden">
+            {/* Desktop version modal */}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // --- DESKTOP LAYOUT ---
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans">
-      
+
       {/* 1. Header Area */}
-      <Header 
-        groups={bookmarks} 
-        setGroups={setBookmarks} 
+      <Header
+        groups={bookmarks}
+        setGroups={setBookmarks}
         setIsConfirmModalOpen={setIsConfirmModalOpen}
         setConfirmModalMessage={setConfirmModalMessage}
         setConfirmModalAction={setConfirmModalAction}
