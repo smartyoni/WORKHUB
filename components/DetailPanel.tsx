@@ -15,6 +15,7 @@ interface DetailPanelProps {
   setIsConfirmModalOpen: (isOpen: boolean) => void;
   setConfirmModalMessage: (message: string) => void;
   setConfirmModalAction: (action: (() => void) | null) => void;
+  isMobile?: boolean;
 }
 
 const DetailPanel: React.FC<DetailPanelProps> = ({
@@ -29,7 +30,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   categoryInputType,
   setIsConfirmModalOpen,
   setConfirmModalMessage,
-  setConfirmModalAction
+  setConfirmModalAction,
+  isMobile = false
 }) => {
   const [localRow, setLocalRow] = useState<RowData | null>(null);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -197,6 +199,273 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setIsConfirmModalOpen(true);
   };
 
+  // Mobile Layout - Bottom sheet modal
+  if (isMobile) {
+    return (
+      <div className="w-full flex flex-col h-screen bg-white overflow-hidden">
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10 shrink-0">
+          <h2 className="text-base font-bold text-gray-800"></h2>
+          <button
+            onClick={() => onDeleteRow(localRow.id)}
+            className="p-2 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500 ml-auto"
+            title="삭제"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Mobile Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+
+          {/* Category */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase">카테고리</label>
+
+            {categoryInputType === 'dropdown' ? (
+                <select
+                  value={localRow._category || categories[0]?.name || ''}
+                  onChange={(e) => {
+                    const updated = { ...localRow, _category: e.target.value };
+                    setLocalRow(updated);
+                    onUpdate(updated);
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white text-sm"
+                >
+                  {categories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+            ) : (
+                <div className="flex flex-wrap gap-2">
+                    {categories.map(cat => {
+                        const isActive = localRow._category === cat.name;
+                        return (
+                            <button
+                              key={cat.id}
+                              onClick={() => {
+                                  const updated = { ...localRow, _category: cat.name };
+                                  setLocalRow(updated);
+                                  onUpdate(updated);
+                              }}
+                              className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                                  isActive
+                                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                              }`}
+                            >
+                                {cat.name}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+          </div>
+
+          {/* Basic Info */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-700">기본 정보</h3>
+              {isEditingInfo ? (
+                <button
+                  onClick={saveChanges}
+                  className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                >
+                  <Save className="w-3 h-3" /> 저장
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsEditingInfo(true)}
+                  className="flex items-center gap-1 px-2 py-1 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50"
+                >
+                  <Edit2 className="w-3 h-3" /> 수정
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-3 text-xs">
+              {columns.map((col) => (
+                <div key={col.id} className="space-y-1">
+                  <span className="text-gray-500 font-medium block">{col.name}</span>
+                  {isEditingInfo ? (
+                    <input
+                      type={getInputType(col.type)}
+                      value={localRow[col.id] || ''}
+                      onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                      className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                    />
+                  ) : (
+                    <span className="text-gray-800 block break-words">
+                      {localRow[col.id] || '-'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Memo */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-gray-700">메모</h3>
+            <div
+              className={`w-full p-3 rounded-md text-sm leading-relaxed border transition-all ${
+                isEditingMemo
+                  ? 'border-orange-400 bg-orange-50 ring-1 ring-orange-200'
+                  : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'
+              }`}
+              onDoubleClick={() => setIsEditingMemo(true)}
+            >
+              {isEditingMemo ? (
+                <textarea
+                  autoFocus
+                  rows={6}
+                  className="w-full bg-transparent outline-none resize-none block text-sm"
+                  value={localRow._memo}
+                  onChange={(e) => setLocalRow({ ...localRow, _memo: e.target.value })}
+                  onBlur={() => {
+                    setIsEditingMemo(false);
+                    onUpdate({ ...localRow });
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <div className="text-gray-700 whitespace-pre-wrap line-clamp-4">
+                  {localRow._memo || <span className="text-gray-400 text-xs italic">더블클릭하여 메모를 입력하세요...</span>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Checklist */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-gray-700">
+              체크리스트
+              <span className="text-xs font-normal text-gray-400 ml-1">
+                ({localRow._checklists.filter(c => c.isChecked).length}/{localRow._checklists.length})
+              </span>
+            </h3>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="체크리스트 추가"
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-green-500"
+                value={newChecklistText}
+                onChange={(e) => setNewChecklistText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addChecklist()}
+              />
+              <button
+                onClick={addChecklist}
+                className="p-2 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {sortedChecklists.map((item) => {
+                const isExpanded = expandedChecklistIds.includes(item.id);
+                const repliesToShow = isExpanded ? item.replies : item.replies.slice(-1);
+
+                return (
+                  <div key={item.id} className="group bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs space-y-2">
+                    <div className="flex items-start gap-2">
+                      <button
+                        onClick={() => toggleChecklist(item.id)}
+                        className={`mt-0.5 w-4 h-4 flex items-center justify-center rounded border shrink-0 ${
+                          item.isChecked
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'bg-white border-gray-300 text-transparent hover:border-green-400'
+                        } transition-colors`}
+                      >
+                        <CheckSquare className="w-2.5 h-2.5" />
+                      </button>
+
+                      <div className="flex-1 min-w-0">
+                        {editingChecklistId === item.id ? (
+                            <input
+                                autoFocus
+                                type="text"
+                                className="w-full text-xs border-b border-blue-400 outline-none pb-0.5"
+                                defaultValue={item.text}
+                                onBlur={(e) => updateChecklistText(item.id, e.target.value)}
+                                onKeyDown={(e) => {
+                                    if(e.key === 'Enter') {
+                                        updateChecklistText(item.id, e.currentTarget.value);
+                                    }
+                                }}
+                            />
+                        ) : (
+                            <span
+                                className={`text-xs cursor-pointer select-none block ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                                onDoubleClick={() => setEditingChecklistId(item.id)}
+                                onClick={() => toggleRepliesExpansion(item.id)}
+                            >
+                                {item.text}
+                            </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => deleteChecklist(item.id)}
+                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* Replies */}
+                    {repliesToShow.length > 0 && (
+                      <div className="pl-6 space-y-1">
+                        {repliesToShow.map(reply => (
+                          <div key={reply.id} className="text-xs text-gray-600 bg-white p-1.5 rounded relative group/reply">
+                            <p className="line-clamp-2">{reply.text}</p>
+                            {isExpanded && <span className="text-[9px] text-gray-400 mt-0.5 block">{reply.createdAt}</span>}
+                            {isExpanded && (
+                              <button
+                                onClick={() => deleteReply(item.id, reply.id)}
+                                className="absolute top-1 right-1 text-gray-300 hover:text-red-400 opacity-0 group-hover/reply:opacity-100"
+                              >
+                                <X className="w-3 h-3"/>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {!isExpanded && item.replies.length > 1 && (
+                          <div className="text-[9px] text-gray-400 pl-2 cursor-pointer" onClick={() => toggleRepliesExpansion(item.id)}>
+                            +{item.replies.length - 1}개 더보기
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Reply Input */}
+                    {isExpanded && (
+                      <div className="flex items-start gap-1 pl-6 pt-1">
+                        <textarea
+                          placeholder="답글..."
+                          className="flex-1 bg-transparent text-xs border-b border-gray-200 focus:border-green-400 outline-none py-0.5 resize-none h-6 focus:h-12 transition-all"
+                          value={replyInputs[item.id] || ''}
+                          onChange={(e) => setReplyInputs(prev => ({...prev, [item.id]: e.target.value}))}
+                          onKeyDown={(e) => {
+                            if(e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              addReply(item.id);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout - Side panel
   return (
     <div
       className={`fixed inset-y-0 right-0 w-[750px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col border-l border-gray-200 ${

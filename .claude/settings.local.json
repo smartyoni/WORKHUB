@@ -12,7 +12,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\n초기 커밋: 업무통합관리 앱 완성\n\n- Firebase Firestore 통합 (클라우드 데이터 저장)\n- 고급 필터 시스템 확장 (카테고리, 메모, 체크리스트, 답글 필터링)\n- 브라우저 탭 제목 변경: \"업무통합관리\"\n- 파비콘 추가 (폴더 + 체크마크 디자인)\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\n모바일 최적화 레이아웃 구현 완료\n\n- 모바일 감지 및 반응형 상태 관리\n- 북마크 슬라이드 컴포넌트 (터치 제스처 지원)\n- 테이블 탭바 (하단 네비게이션)\n- 모바일 상세 패널 (전체 모달로 표시)\n- 테이블 뷰 드래그 스크롤 지원\n- 768px 이하에서 자동 전환\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\n모바일 최적화 레이아웃 구현 완료\n\n- 모바일 감지 및 반응형 상태 관리\n- 북마크 슬라이드 컴포넌트 (터치 제스처 지원)\n- 테이블 탭바 (하단 네비게이션)\n- 모바일 상세 패널 (전체 모달로 표시)\n- 테이블 뷰 드래그 스크롤 지원\n- 768px 이하에서 자동 전환\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

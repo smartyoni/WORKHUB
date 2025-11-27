@@ -1001,23 +1001,19 @@ export default function App() {
         {/* Mobile Detail Panel Modal */}
         {isDetailPanelModal && selectedRow && activeTable && (
           <div className="fixed inset-0 bg-black/50 flex items-end z-50 animate-in fade-in">
-            <div className="bg-white w-full rounded-t-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom">
-              {/* Modal Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-800">상세 정보</h2>
+            <div className="bg-white w-full h-screen flex flex-col animate-in slide-in-from-bottom">
+              {/* Close Button */}
+              <div className="flex justify-end p-2">
                 <button
                   onClick={() => {
                     setIsDetailPanelModal(false);
                     setSelectedRowId(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-2"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
-              {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-4">
                 <DetailPanel
                   tableName={activeTable.name}
                   row={selectedRow}
@@ -1048,8 +1044,8 @@ export default function App() {
                   setIsConfirmModalOpen={setIsConfirmModalOpen}
                   setConfirmModalMessage={setConfirmModalMessage}
                   setConfirmModalAction={setConfirmModalAction}
+                  isMobile={true}
                 />
-              </div>
             </div>
           </div>
         )}
