@@ -597,6 +597,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           {/* Removed the old justify-end div that contained the button */}
         </div>
 
+        {/* Divider */}
+        <div className="h-1 bg-green-500 rounded-full"></div>
+
         {/* Memo */}
         <div className="space-y-3">
           <div 
