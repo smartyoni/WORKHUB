@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
-import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory } from './types';
+import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
 import { initDB, loadAllData, saveTables, saveBookmarks, saveCategories, saveFilters } from './firebase';
-import { 
-  Plus, 
-  Search, 
-  LayoutGrid, 
-  Settings, 
-  Filter, 
-  Inbox, 
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  Settings,
+  Filter,
+  Inbox,
   MoreVertical,
   Table as TableIcon,
   Trash2,
@@ -24,7 +24,8 @@ import {
   Unlock,
   ListFilter,
   CheckCircle2,
-  Circle
+  Circle,
+  Upload
 } from 'lucide-react';
 
 // --- MOCK DATA INITIALIZATION ---
@@ -184,6 +185,11 @@ export default function App() {
   const [bookmarkSlideIndex, setBookmarkSlideIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
   const [isDetailPanelModal, setIsDetailPanelModal] = useState(false);
+
+  // --- CSV UPLOAD STATE ---
+  const [isCSVUploadModalOpen, setIsCSVUploadModalOpen] = useState(false);
+  const [csvValidationResult, setCSVValidationResult] = useState<ValidationResult | null>(null);
+  const [csvPreviewData, setCSVPreviewData] = useState<any[] | null>(null);
 
   const activeTable = tables.find(t => t.id === activeTableId);
   const visibleColumns = activeTable?.columns.filter(c => !c.isHidden) || [];
@@ -692,6 +698,100 @@ export default function App() {
     setIsRowModalOpen(false);
   };
 
+  // --- CSV UPLOAD FUNCTIONS ---
+  const handleCSVFileSelect = (file: File) => {
+    if (!activeTable) return;
+
+    // File size validation (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setCSVValidationResult({
+        isValid: false,
+        errors: ['파일 크기가 너무 큽니다 (최대 10MB)']
+      });
+      return;
+    }
+
+    // File type validation
+    if (!file.type.includes('csv') && !file.name.endsWith('.csv')) {
+      setCSVValidationResult({
+        isValid: false,
+        errors: ['CSV 파일만 업로드 가능합니다']
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvText = e.target?.result as string;
+        // Remove BOM if present
+        const cleanCsvText = csvText.replace(/^\uFEFF/, '');
+        // Parse CSV
+        const csvRows = parseCSV(cleanCsvText);
+
+        if (csvRows.length === 0) {
+          setCSVValidationResult({
+            isValid: false,
+            errors: ['CSV 파일이 비어있습니다']
+          });
+          return;
+        }
+
+        // Validate CSV data
+        const validationResult = validateCSVData(csvRows, activeTable.columns);
+        setCSVValidationResult(validationResult);
+      } catch (error) {
+        setCSVValidationResult({
+          isValid: false,
+          errors: [`파일 읽기 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`]
+        });
+      }
+    };
+
+    reader.readAsText(file, 'utf-8');
+  };
+
+  const handleCSVUpload = () => {
+    if (!activeTable || !csvValidationResult?.isValid || !csvValidationResult.validatedRows) {
+      return;
+    }
+
+    const timestamp = Date.now();
+    const newRows: RowData[] = csvValidationResult.validatedRows.map((validatedData, index) => {
+      // Extract special columns if present in validated data
+      const memoValue = validatedData._memo || '';
+      const categoryValue = validatedData._category || categories[0]?.name || '기본';
+
+      // Create row with validated column data
+      const newRow: RowData = {
+        id: `row-csv-${timestamp}-${index}`,
+        ...validatedData,
+        _memo: memoValue,
+        _category: categoryValue,
+        _checklists: []
+      };
+
+      return newRow;
+    });
+
+    // Update table with new rows (add to top)
+    const updatedTable = {
+      ...activeTable,
+      rows: [...newRows, ...activeTable.rows]
+    };
+
+    // Update state
+    setTables(prev => prev.map(t => t.id === activeTable.id ? updatedTable : t));
+
+    // Close modal and reset state
+    setIsCSVUploadModalOpen(false);
+    setCSVValidationResult(null);
+    setCSVPreviewData(null);
+
+    // Show success message
+    alert(`${newRows.length}개의 행이 추가되었습니다.`);
+  };
+
   // --- COLUMN MENU ACTIONS ---
   const handleSort = (colId: string, direction: 'asc' | 'desc') => {
       if (!activeTable) return;
@@ -887,12 +987,22 @@ export default function App() {
         {/* Mobile Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-bold">업무통합관리</h1>
-          <button
-            onClick={() => setIsTableModalOpen(true)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsCSVUploadModalOpen(true)}
+              className="p-2 hover:bg-green-100 rounded-lg text-green-600"
+              title="CSV 업로드"
+            >
+              <Upload className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setIsTableModalOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+              title="테이블 추가"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Mobile Bookmark Slider */}
@@ -1168,7 +1278,14 @@ export default function App() {
                     <EyeOff className="w-4 h-4" />
                     숨긴컬럼 ({hiddenColumns.length})
                 </button>
-                <button 
+                <button
+                    onClick={() => setIsCSVUploadModalOpen(true)}
+                    className="px-3 py-2 bg-green-50 hover:bg-green-100 text-green-600 text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2 border border-green-200"
+                >
+                    <Upload className="w-4 h-4" />
+                    CSV 업로드
+                </button>
+                <button
                     onClick={openRowModal}
                     className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2"
                 >
@@ -1868,6 +1985,184 @@ export default function App() {
                     </button>
                 </div>
             </div>
+        </div>
+      )}
+
+      {/* CSV Upload Modal */}
+      {isCSVUploadModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[102] backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-gray-100 sticky top-0 bg-white">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-800">CSV 파일 업로드</h3>
+                <button
+                  onClick={() => {
+                    setIsCSVUploadModalOpen(false);
+                    setCSVValidationResult(null);
+                    setCSVPreviewData(null);
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {!csvValidationResult ? (
+                // File Selection UI
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+                    <div className="font-semibold mb-2">주의사항:</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>첫 행은 컬럼명이어야 합니다</li>
+                      <li>컬럼명은 기존 테이블과 정확히 일치해야 합니다</li>
+                      <li>선택사항: _memo, _category 컬럼 포함 가능</li>
+                    </ul>
+                  </div>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer"
+                    onClick={() => document.getElementById('csv-file-input')?.click()}
+                  >
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-700 font-medium mb-1">CSV 파일을 여기에 드래그하거나 클릭하여 선택</p>
+                    <p className="text-xs text-gray-500">최대 크기: 10MB</p>
+                  </div>
+
+                  <input
+                    id="csv-file-input"
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleCSVFileSelect(file);
+                    }}
+                  />
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => {
+                        setIsCSVUploadModalOpen(false);
+                        setCSVValidationResult(null);
+                        setCSVPreviewData(null);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : !csvValidationResult.isValid ? (
+                // Error Display UI
+                <div className="space-y-4">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-red-700 mb-3">검증 오류</h4>
+                    <div className="space-y-2">
+                      {csvValidationResult.errors?.map((error, idx) => (
+                        <div key={idx} className="text-sm text-red-600 flex items-start gap-2">
+                          <span className="text-red-400 mt-0.5">•</span>
+                          <span>{error}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setIsCSVUploadModalOpen(false);
+                        setCSVValidationResult(null);
+                        setCSVPreviewData(null);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => {
+                        document.getElementById('csv-file-input')?.click();
+                        setCSVValidationResult(null);
+                        setCSVPreviewData(null);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded-lg transition-colors font-medium"
+                    >
+                      다시 선택
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Preview UI
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-green-700 mb-2">✓ 검증 완료</h4>
+                    <p className="text-sm text-green-600">
+                      유효한 행: <strong>{csvValidationResult.validatedRows?.length || 0}</strong>개
+                    </p>
+                  </div>
+
+                  {csvValidationResult.validatedRows && csvValidationResult.validatedRows.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold text-gray-700">미리보기 (첫 5행)</h4>
+                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table className="w-full text-xs">
+                          <thead className="bg-gray-50 border-b">
+                            <tr>
+                              {activeTable?.columns.map(col => (
+                                <th key={col.id} className="px-3 py-2 text-left text-gray-600 font-medium whitespace-nowrap">
+                                  {col.name}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {csvValidationResult.validatedRows.slice(0, 5).map((row, idx) => (
+                              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                {activeTable?.columns.map(col => (
+                                  <td key={col.id} className="px-3 py-2 text-gray-700 truncate max-w-xs">
+                                    {row[col.id] || '-'}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => {
+                        setIsCSVUploadModalOpen(false);
+                        setCSVValidationResult(null);
+                        setCSVPreviewData(null);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => {
+                        document.getElementById('csv-file-input')?.click();
+                        setCSVValidationResult(null);
+                        setCSVPreviewData(null);
+                      }}
+                      className="flex-1 px-4 py-2 text-sm bg-gray-500 text-white hover:bg-gray-600 rounded-lg transition-colors font-medium"
+                    >
+                      다시 선택
+                    </button>
+                    <button
+                      onClick={handleCSVUpload}
+                      className="flex-1 px-4 py-2 text-sm bg-green-500 text-white hover:bg-green-600 rounded-lg transition-colors font-medium"
+                    >
+                      업로드
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
