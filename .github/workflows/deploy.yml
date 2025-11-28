@@ -38,6 +38,9 @@ jobs:
   deploy:
     needs: build-and-deploy
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://smartyoni.github.io/WORKHUB/
 
     steps:
       - name: Deploy to GitHub Pages
