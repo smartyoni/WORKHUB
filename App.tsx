@@ -3,7 +3,7 @@ import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
-import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData, migrateChecklistItem } from './types';
+import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
 import { initDB, loadAllData, saveTables, saveBookmarks, saveCategories, saveFilters } from './firebase';
 import {
   Plus,
@@ -231,7 +231,7 @@ export default function App() {
             ...table,
             rows: table.rows.map(row => ({
               ...row,
-              _checklists: (row._checklists || []).map(migrateChecklistItem)
+              _checklists: row._checklists || []
             }))
           }));
         };
