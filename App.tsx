@@ -1114,19 +1114,7 @@ export default function App() {
         {isDetailPanelModal && selectedRow && activeTable && (
           <div className="fixed inset-0 bg-black/50 flex items-end z-50 animate-in fade-in">
             <div className="bg-white w-full h-screen flex flex-col animate-in slide-in-from-bottom">
-              {/* Close Button */}
-              <div className="flex justify-end p-2">
-                <button
-                  onClick={() => {
-                    setIsDetailPanelModal(false);
-                    setSelectedRowId(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-2"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-                <DetailPanel
+              <DetailPanel
                   tableName={activeTable.name}
                   row={selectedRow}
                   columns={activeTable.columns}

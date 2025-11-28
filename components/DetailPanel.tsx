@@ -206,13 +206,22 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         {/* Mobile Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10 shrink-0">
           <h2 className="text-base font-bold text-gray-800"></h2>
-          <button
-            onClick={() => onDeleteRow(localRow.id)}
-            className="p-2 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500 ml-auto"
-            title="삭제"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-0 ml-auto">
+            <button
+              onClick={() => onDeleteRow(localRow.id)}
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500"
+              title="삭제"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-500"
+              title="닫기"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Mobile Content */}
