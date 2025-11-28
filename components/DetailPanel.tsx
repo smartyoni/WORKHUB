@@ -292,19 +292,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               )}
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-2 text-xs">
               {columns.map((col) => (
-                <div key={col.id} className="space-y-1">
-                  <span className="text-gray-500 font-medium block">{col.name}</span>
+                <div key={col.id} className="flex flex-wrap gap-2 items-start">
+                  <span className="text-gray-800 font-bold whitespace-nowrap">{col.name}:</span>
                   {isEditingInfo ? (
                     <input
                       type={getInputType(col.type)}
                       value={localRow[col.id] || ''}
                       onChange={(e) => handleInfoChange(col.id, e.target.value)}
-                      className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                      className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
                     />
                   ) : (
-                    <span className="text-gray-800 block break-words">
+                    <span className="text-gray-800 break-words flex-1">
                       {localRow[col.id] || '-'}
                     </span>
                   )}
