@@ -108,23 +108,15 @@ const initialTables: TableDefinition[] = [
       _checklists: [
         {
           id: 'cl-1',
-          title: '계약서 초안 작성',
-          description: '계약서 작성 및 검토 진행',
+          text: '계약서 초안 작성',
           isChecked: false,
-          subtasks: [],
           replies: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
         {
           id: 'cl-2',
-          title: '보증금 입금 확인',
-          description: '은행 계좌 입금 확인하기',
+          text: '보증금 입금 확인',
           isChecked: true,
-          subtasks: [],
           replies: [{ id: 'r1', text: '입금 확인됨', createdAt: '2024.11.20' }],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         }
       ],
     })),
@@ -368,7 +360,7 @@ export default function App() {
         return checklists.length > 0 && checklists.every(item => item.isChecked);
       case 'checklistContains':
         return checklists.some(item =>
-          item.title.toLowerCase().includes(condition.value.toLowerCase())
+          item.text.toLowerCase().includes(condition.value.toLowerCase())
         );
       default:
         return true;
