@@ -69,6 +69,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setNewSubtaskDescription('');
   }, [row]);
 
+  // Sort Checklists: Unchecked first (newest to oldest), Checked last
+  // Must be called before early return to follow Rules of Hooks
+  const sortedChecklists = useMemo(() => {
+    return [...(localRow?._checklists || [])].sort((a, b) => {
+      // 1순위: 체크 여부 (미체크 먼저)
+      if (a.isChecked !== b.isChecked) {
+        return (a.isChecked ? 1 : 0) - (b.isChecked ? 1 : 0);
+      }
+      // 2순위: 최신 업데이트 순
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+  }, [localRow?._checklists]);
+
   if (!localRow || !isOpen) return null;
 
   const handleInfoChange = (field: string, value: any) => {
@@ -95,18 +108,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   };
 
   // --- Checklist Logic ---
-
-  // Sort Checklists: Unchecked first (newest to oldest), Checked last
-  const sortedChecklists = useMemo(() => {
-    return [...(localRow?._checklists || [])].sort((a, b) => {
-      // 1순위: 체크 여부 (미체크 먼저)
-      if (a.isChecked !== b.isChecked) {
-        return (a.isChecked ? 1 : 0) - (b.isChecked ? 1 : 0);
-      }
-      // 2순위: 최신 업데이트 순
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    });
-  }, [localRow?._checklists]);
 
   const toggleExpansion = (id: string) => {
     setExpandedChecklistIds(prev => {
