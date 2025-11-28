@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node generate-icons.js:*)"
+      "Bash(node generate-icons.js:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
