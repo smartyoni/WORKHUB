@@ -18,8 +18,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/WORKHUB/',
+        start_url: '/WORKHUB/',
         lang: 'ko',
 
         icons: [
