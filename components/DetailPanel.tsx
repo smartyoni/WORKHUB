@@ -313,6 +313,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="h-1 bg-green-500 rounded-full"></div>
+
           {/* Memo */}
           <div className="space-y-2">
             <h3 className="text-sm font-bold text-gray-700">메모</h3>
