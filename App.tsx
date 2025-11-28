@@ -1046,7 +1046,7 @@ export default function App() {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="overflow-hidden flex flex-col flex-1">
           {/* Table Content */}
           <div className="w-full overflow-x-auto overflow-y-auto flex-1">
             {activeTable && (
