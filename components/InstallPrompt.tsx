@@ -8,18 +8,21 @@ interface BeforeInstallPromptEvent extends Event {
 
 const InstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallBanner(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    console.log('beforeinstallprompt listener attached');
 
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is in standalone mode');
       setShowInstallBanner(false);
     }
 
