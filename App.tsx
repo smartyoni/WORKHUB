@@ -1044,12 +1044,12 @@ export default function App() {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-hidden flex flex-col">
           {/* Table Content */}
-          <div className="w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto overflow-y-auto flex-1">
             {activeTable && (
               <table className="w-full border-collapse bg-white">
-                <thead className="sticky top-0 bg-purple-600 text-white">
+                <thead className="sticky top-0 z-20 bg-purple-600 text-white shadow-md">
                   <tr>
                     {visibleColumns.map(col => (
                       <th
@@ -1314,11 +1314,11 @@ export default function App() {
           </div>
 
           {/* Actual Table */}
-          <div className="flex-1 overflow-auto px-6 pb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-[400px]">
-                <div className="overflow-x-auto h-full">
-                    <table className="w-full text-sm text-left whitespace-nowrap">
-                        <thead className="bg-purple-700 text-white sticky top-0 z-10 shadow-sm">
+          <div className="flex-1 overflow-hidden px-6 pb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-[400px] flex flex-col">
+                <div className="overflow-x-auto overflow-y-auto flex-1">
+                    <table className="w-full text-sm text-left whitespace-nowrap border-collapse">
+                        <thead className="bg-purple-700 text-white sticky top-0 z-20 shadow-md">
                             <tr>
                                 {visibleColumns.map(col => (
                                     <th 
