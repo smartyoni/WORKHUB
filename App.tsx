@@ -3,7 +3,7 @@ import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
-import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
+import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData, migrateChecklistItem } from './types';
 import { initDB, loadAllData, saveTables, saveBookmarks, saveCategories, saveFilters } from './firebase';
 import {
   Plus,
@@ -106,8 +106,26 @@ const initialTables: TableDefinition[] = [
       _memo: i === 0 ? '중요한 고객입니다.\n내일 오후 2시 미팅 예정.' : '',
       _category: '기본 프로젝트',
       _checklists: [
-        { id: 'cl-1', text: '계약서 초안 작성', isChecked: false, replies: [] },
-        { id: 'cl-2', text: '보증금 입금 확인', isChecked: true, replies: [{ id: 'r1', text: '입금 확인됨', createdAt: '2024.11.20' }] }
+        {
+          id: 'cl-1',
+          title: '계약서 초안 작성',
+          description: '계약서 작성 및 검토 진행',
+          isChecked: false,
+          subtasks: [],
+          replies: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: 'cl-2',
+          title: '보증금 입금 확인',
+          description: '은행 계좌 입금 확인하기',
+          isChecked: true,
+          subtasks: [],
+          replies: [{ id: 'r1', text: '입금 확인됨', createdAt: '2024.11.20' }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
       ],
     })),
   },
@@ -207,8 +225,20 @@ export default function App() {
         await initDB();
         const { tables: dbTables, bookmarks: dbBookmarks, categories: dbCategories, filters: dbFilters } = await loadAllData();
 
-        // IndexedDB에 데이터가 있으면 로드, 없으면 초기값 사용
-        setTables(dbTables.length > 0 ? dbTables : initialTables);
+        // 데이터 마이그레이션 헬퍼 함수
+        const migrateTableData = (tables: TableDefinition[]): TableDefinition[] => {
+          return tables.map(table => ({
+            ...table,
+            rows: table.rows.map(row => ({
+              ...row,
+              _checklists: (row._checklists || []).map(migrateChecklistItem)
+            }))
+          }));
+        };
+
+        // IndexedDB에 데이터가 있으면 로드 (마이그레이션 적용), 없으면 초기값 사용
+        const migratedTables = dbTables.length > 0 ? migrateTableData(dbTables) : initialTables;
+        setTables(migratedTables);
         setBookmarks(dbBookmarks.length > 0 ? dbBookmarks : initialBookmarkGroups);
         setCategories(dbCategories.length > 0 ? dbCategories : initialCategories);
         setCustomFilters(dbFilters || []);
@@ -338,7 +368,7 @@ export default function App() {
         return checklists.length > 0 && checklists.every(item => item.isChecked);
       case 'checklistContains':
         return checklists.some(item =>
-          item.text.toLowerCase().includes(condition.value.toLowerCase())
+          item.title.toLowerCase().includes(condition.value.toLowerCase())
         );
       default:
         return true;
