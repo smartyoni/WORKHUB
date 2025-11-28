@@ -513,7 +513,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
                       <button
                         onClick={() => deleteChecklist(item.id)}
-                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        className={`text-gray-300 hover:text-red-500 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -588,7 +588,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                                 </div>
                                 <button
                                   onClick={() => deleteSubtask(item.id, subtask.id)}
-                                  className="text-gray-300 hover:text-red-500 opacity-0 group-hover/subtask:opacity-100 transition-opacity shrink-0"
+                                  className={`text-gray-300 hover:text-red-500 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover/subtask:opacity-100'} transition-opacity`}
                                 >
                                   <Trash2 className="w-2.5 h-2.5" />
                                 </button>
