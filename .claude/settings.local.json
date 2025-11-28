@@ -3,7 +3,11 @@
     "allow": [
       "Bash(node generate-icons.js:*)",
       "Bash(git rm:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(netstat:*)",
+      "Bash(timeout 5 npm:*)",
+      "Bash(taskkill:*)",
+      "Bash(gh run list:*)"
     ],
     "deny": [],
     "ask": []
