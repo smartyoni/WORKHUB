@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
+import InstallPrompt from './components/InstallPrompt';
+import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
 import { initDB, loadAllData, saveTables, saveBookmarks, saveCategories, saveFilters } from './firebase';
 import {
@@ -1173,6 +1175,8 @@ export default function App() {
   // --- DESKTOP LAYOUT ---
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans">
+      <UpdatePrompt />
+      <InstallPrompt />
 
       {/* 1. Header Area */}
       <Header

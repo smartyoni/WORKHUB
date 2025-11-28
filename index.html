@@ -3,47 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>업무통합관리</title>
+
+    <!-- 기본 메타 -->
+    <title>업무통합관리 - WORKHUB</title>
+    <meta name="description" content="업무 관리, 북마크, 필터를 통합한 생산성 앱" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#3B82F6" />
+
+    <!-- 파비콘 -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- Tailwind CSS CDN (간편한 설정을 위해 유지) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <!-- Apple -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="WORKHUB" />
+
+    <!-- Android -->
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Windows -->
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Noto Sans KR', sans-serif;
-        overflow: hidden; /* Prevent body scroll, handle inside app */
-      }
-      /* Custom scrollbar for webkit */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f1f1; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #c1c1c1; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8; 
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4"
-  }
-}
-</script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
