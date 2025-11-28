@@ -22,24 +22,11 @@ export interface Reply {
   createdAt: string;
 }
 
-export interface SubTask {
-  id: string;
-  title: string;
-  description: string;
-  isChecked: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface ChecklistItem {
   id: string;
-  title: string;
-  description: string;
+  text: string;
   isChecked: boolean;
-  subtasks: SubTask[];
   replies: Reply[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface RowData {
@@ -373,32 +360,3 @@ export function validateCSVData(csvRows: string[][], tableColumns: Column[]): Va
   return { isValid: true, validatedRows };
 }
 
-// --- Checklist Migration Helper ---
-
-/**
- * Migrate old ChecklistItem format (with `text` field) to new format (with `title` and `description`)
- * Ensures backward compatibility with existing data
- */
-export function migrateChecklistItem(old: any): ChecklistItem {
-  // If it's old format (has `text` but not `title`)
-  if (old.text && !old.title) {
-    return {
-      id: old.id,
-      title: old.text,
-      description: '',
-      isChecked: old.isChecked || false,
-      subtasks: [],
-      replies: old.replies || [],
-      createdAt: old.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  }
-  // Already new format or partially migrated
-  return {
-    ...old,
-    subtasks: old.subtasks || [],
-    description: old.description || '',
-    createdAt: old.createdAt || new Date().toISOString(),
-    updatedAt: old.updatedAt || new Date().toISOString(),
-  };
-}
