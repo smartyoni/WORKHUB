@@ -199,6 +199,9 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
 
+  // 데이터 소스 구분: 초기값과 실제 로드된 데이터를 구분하여 자동 저장 안전화
+  const [dataSource, setDataSource] = useState<'initial' | 'loaded'>('initial');
+
   // --- CUSTOM CONFIRM MODAL STATE ---
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmModalMessage, setConfirmModalMessage] = useState('');
@@ -265,6 +268,13 @@ export default function App() {
         setBookmarks(dbBookmarks.length > 0 ? dbBookmarks : initialBookmarkGroups);
         setCategories(dbCategories.length > 0 ? dbCategories : initialCategories);
         setCustomFilters(dbFilters || []);
+
+        // ✅ 데이터 소스 결정 (초기값 vs 실제 데이터)
+        // 실제 데이터가 로드된 경우만 'loaded' 설정 → 자동 저장 활성화
+        // 초기값만 사용하는 경우는 'initial' 유지 → 자동 저장 비활성화
+        const hasRealData = dbTables.length > 0 || dbBookmarks.length > 0;
+        setDataSource(hasRealData ? 'loaded' : 'initial');
+
         setIsDBLoaded(true);
       } catch (error) {
         console.error('Failed to load data from IndexedDB:', error);
@@ -286,6 +296,11 @@ export default function App() {
           setBookmarks(firebaseData.bookmarks.length > 0 ? firebaseData.bookmarks : initialBookmarkGroups);
           setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
           setCustomFilters(firebaseData.filters || []);
+
+          // ✅ Firebase에서 로드한 경우도 dataSource 설정
+          const hasFirebaseData = firebaseData.tables.length > 0 || firebaseData.bookmarks.length > 0;
+          setDataSource(hasFirebaseData ? 'loaded' : 'initial');
+
           setIsDBLoaded(true);
         } catch (firebaseError) {
           console.error('Failed to load data from Firebase:', firebaseError);
@@ -294,6 +309,10 @@ export default function App() {
           setBookmarks(initialBookmarkGroups);
           setCategories(initialCategories);
           setCustomFilters([]);
+
+          // ⚠️ 초기값만 사용하는 경우 자동 저장 비활성화
+          setDataSource('initial');
+
           setIsDBLoaded(true);
         }
       }
@@ -490,36 +509,42 @@ export default function App() {
   const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters]);
 
   // --- AUTO SAVE TO INDEXEDDB & FIREBASE ---
+  // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
+
   // Save tables to IndexedDB and Firebase whenever they change
   useEffect(() => {
-    if (isDBLoaded && tables.length > 0) {
+    // 조건: DB 로드 완료 AND 실제 데이터 존재 AND 실제 로드된 데이터
+    if (isDBLoaded && tables.length > 0 && dataSource === 'loaded') {
       Promise.all([
         saveTablesToDB(tables).catch(error => console.error('Failed to save tables to IndexedDB:', error)),
         saveTablesFirebase(tables).catch(error => console.error('Failed to save tables to Firebase:', error))
       ]).catch(error => console.error('Failed to save tables:', error));
     }
-  }, [tables, isDBLoaded]);
+  }, [tables, isDBLoaded, dataSource]);
 
   // Save bookmarks to IndexedDB whenever they change
   useEffect(() => {
-    if (isDBLoaded && bookmarks.length > 0) {
+    // 조건: DB 로드 완료 AND 실제 데이터 존재 AND 실제 로드된 데이터
+    if (isDBLoaded && bookmarks.length > 0 && dataSource === 'loaded') {
       saveBookmarks(bookmarks).catch(error => console.error('Failed to save bookmarks:', error));
     }
-  }, [bookmarks, isDBLoaded]);
+  }, [bookmarks, isDBLoaded, dataSource]);
 
   // Save categories to IndexedDB whenever they change
   useEffect(() => {
-    if (isDBLoaded && categories.length > 0) {
+    // 조건: DB 로드 완료 AND 카테고리 존재 AND 실제 로드된 데이터
+    if (isDBLoaded && categories.length > 0 && dataSource === 'loaded') {
       saveCategories(categories).catch(error => console.error('Failed to save categories:', error));
     }
-  }, [categories, isDBLoaded]);
+  }, [categories, isDBLoaded, dataSource]);
 
   // Save filters to IndexedDB whenever they change
   useEffect(() => {
-    if (isDBLoaded) {
+    // 필터는 특정 테이블의 필터이므로, 실제 데이터가 로드된 경우에만 저장
+    if (isDBLoaded && dataSource === 'loaded') {
       saveFilters(customFilters).catch(error => console.error('Failed to save filters:', error));
     }
-  }, [customFilters, isDBLoaded]);
+  }, [customFilters, isDBLoaded, dataSource]);
 
   const openFilterModal = () => {
       setNewFilterName('');
