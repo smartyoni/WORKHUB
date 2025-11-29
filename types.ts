@@ -53,7 +53,8 @@ export interface Bookmark {
 export interface BookmarkGroup {
   id: string;
   name: string; // e.g. "호실관리", "계약서작성"
-  color: string; // Tailwind class mostly
+  color: string; // Hex color code or color name (e.g., "#FFD700", "yellow")
+  area?: number; // 영역 구분 (1-4)
   items: Bookmark[];
 }
 

@@ -33,12 +33,26 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+// --- 색상 팔레트 정의 (선명하고 생생한 색상) ---
+const BOOKMARK_COLORS = [
+  { id: 'blue', name: '파랑', hex: '#3B82F6' },
+  { id: 'orange', name: '주황', hex: '#F97316' },
+  { id: 'green', name: '초록', hex: '#10B981' },
+  { id: 'pink', name: '분홍', hex: '#EC4899' },
+  { id: 'purple', name: '보라', hex: '#A855F7' },
+  { id: 'yellow', name: '노랑', hex: '#FBBF24' },
+  { id: 'lime', name: '라임', hex: '#84CC16' },
+  { id: 'cyan', name: '하늘', hex: '#06B6D4' },
+  { id: 'gray', name: '회색', hex: '#9CA3AF' },
+];
+
 // --- MOCK DATA INITIALIZATION ---
 const initialBookmarkGroups: BookmarkGroup[] = [
   {
     id: 'group-1',
     name: '호실관리',
-    color: 'yellow',
+    color: '#FBBF24',
+    area: 1,
     items: [
       { id: '1', name: '호실관리', url: '' },
       { id: '2', name: '호실수정', url: '' },
@@ -51,7 +65,8 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   {
     id: 'group-2',
     name: '계약서작성',
-    color: 'blue',
+    color: '#3B82F6',
+    area: 2,
     items: [
       { id: '1', name: '등기소', url: '' },
       { id: '2', name: '정부24', url: '' },
@@ -62,7 +77,8 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   {
     id: 'group-3',
     name: '사무실관리,시세조회',
-    color: 'orange',
+    color: '#F97316',
+    area: 3,
     items: [
       { id: '1', name: '원부장님계약', url: '' },
       { id: '2', name: '건강보험', url: '' },
@@ -73,7 +89,8 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   {
     id: 'group-4',
     name: '개발도구 모음',
-    color: 'green',
+    color: '#10B981',
+    area: 4,
     items: [
       { id: '1', name: '깃허브', url: '' },
       { id: '2', name: 'AI스튜디오', url: '' },
@@ -188,6 +205,20 @@ export default function App() {
 
   // Filter Creation Form State
   const [newFilterName, setNewFilterName] = useState('');
+
+  // --- BOOKMARK EDIT STATE ---
+  const [isBookmarkEditModalOpen, setIsBookmarkEditModalOpen] = useState(false);
+  const [editingBookmarkGroup, setEditingBookmarkGroup] = useState<BookmarkGroup | null>(null);
+  const [bookmarkEditForm, setBookmarkEditForm] = useState({
+    name: '',
+    color: '#3B82F6',
+    area: 1 as number,
+  });
+  const [bookmarkContextMenu, setBookmarkContextMenu] = useState<{
+    groupId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Add Column Modal State
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
@@ -808,6 +839,52 @@ export default function App() {
       }
   };
 
+  // --- BOOKMARK EDIT FUNCTIONS ---
+  const handleBookmarkEditOpen = (group: BookmarkGroup) => {
+    setEditingBookmarkGroup(group);
+    setBookmarkEditForm({
+      name: group.name,
+      color: group.color,
+      area: group.area || 1,
+    });
+    setIsBookmarkEditModalOpen(true);
+    setBookmarkContextMenu(null);
+  };
+
+  const handleBookmarkSave = () => {
+    if (!editingBookmarkGroup || !bookmarkEditForm.name.trim()) return;
+
+    setBookmarks(
+      bookmarks.map(group =>
+        group.id === editingBookmarkGroup.id
+          ? {
+              ...group,
+              name: bookmarkEditForm.name,
+              color: bookmarkEditForm.color,
+              area: bookmarkEditForm.area,
+            }
+          : group
+      )
+    );
+    setIsBookmarkEditModalOpen(false);
+    setEditingBookmarkGroup(null);
+  };
+
+  const handleBookmarkDelete = (groupId: string) => {
+    setBookmarks(bookmarks.filter(group => group.id !== groupId));
+    setBookmarkContextMenu(null);
+  };
+
+  const handleBookmarkContextMenu = (e: React.MouseEvent, groupId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setBookmarkContextMenu({
+      groupId,
+      x: e.clientX,
+      y: e.clientY,
+    });
+  };
+
 
   const addTable = () => {
     if (!newTableName.trim()) return;
@@ -1203,22 +1280,37 @@ export default function App() {
         {/* Mobile Bookmark Slider */}
         {bookmarks.length > 0 && (
           <div
-            className="bg-gradient-to-b from-blue-50 to-pink-50 p-4 border-b border-gray-200"
+            className="p-4 border-b border-gray-300 relative"
+            style={{
+              backgroundColor: currentBookmarkGroup?.color || '#3B82F6',
+              opacity: 0.95,
+            }}
             onTouchStart={handleBookmarkTouchStart}
             onTouchEnd={handleBookmarkTouchEnd}
           >
             <div className="mb-3">
-              <p className="text-xs text-gray-600 font-medium mb-2">
-                {currentBookmarkGroup?.name || '북마크'}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-white font-bold">
+                  {currentBookmarkGroup?.name || '북마크'}
+                </p>
+                <button
+                  onClick={(e) => handleBookmarkContextMenu(e, currentBookmarkGroup?.id || '')}
+                  className="p-1 hover:bg-white/20 rounded transition-colors text-white"
+                  title="옵션"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {currentBookmarkGroup?.items.map(item => (
-                  <div
+                  <button
                     key={item.id}
-                    className="px-3 py-1 bg-white rounded-lg text-sm font-medium border border-gray-200 shadow-sm"
+                    onClick={() => item.url && window.open(item.url, '_blank')}
+                    className="px-3 py-1.5 bg-white rounded-md text-sm font-medium text-gray-800 shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                    title={item.url || item.name}
                   >
                     {item.name}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -2485,6 +2577,141 @@ export default function App() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bookmark Context Menu */}
+      {bookmarkContextMenu && (
+        <>
+          <div
+            className="fixed inset-0"
+            onClick={() => setBookmarkContextMenu(null)}
+          />
+          <div
+            className="fixed bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-[150px] overflow-hidden animate-in fade-in zoom-in duration-150"
+            style={{
+              left: `${bookmarkContextMenu.x}px`,
+              top: `${bookmarkContextMenu.y}px`,
+            }}
+          >
+            <button
+              onClick={() => {
+                const group = bookmarks.find(g => g.id === bookmarkContextMenu.groupId);
+                if (group) handleBookmarkEditOpen(group);
+              }}
+              className="w-full px-4 py-2 text-sm text-left hover:bg-blue-50 flex items-center gap-2 transition-colors"
+            >
+              <Edit2 className="w-4 h-4 text-blue-600" />
+              <span>수정</span>
+            </button>
+            <button
+              onClick={() => handleBookmarkDelete(bookmarkContextMenu.groupId)}
+              className="w-full px-4 py-2 text-sm text-left hover:bg-red-50 flex items-center gap-2 transition-colors border-t"
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+              <span>삭제</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Bookmark Edit Modal */}
+      {isBookmarkEditModalOpen && editingBookmarkGroup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">북마크 수정</h2>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Name Input */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  이름 (읍자 이름):
+                </label>
+                <input
+                  type="text"
+                  value={bookmarkEditForm.name}
+                  onChange={(e) =>
+                    setBookmarkEditForm({
+                      ...bookmarkEditForm,
+                      name: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="예: 호실관리"
+                />
+              </div>
+
+              {/* Area Selection */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  영역:
+                </label>
+                <select
+                  value={bookmarkEditForm.area}
+                  onChange={(e) =>
+                    setBookmarkEditForm({
+                      ...bookmarkEditForm,
+                      area: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                >
+                  {[1, 2, 3, 4].map((num) => (
+                    <option key={num} value={num}>
+                      영역 {num}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Color Palette */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-3">
+                  색상:
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {BOOKMARK_COLORS.map((color) => (
+                    <button
+                      key={color.id}
+                      onClick={() =>
+                        setBookmarkEditForm({
+                          ...bookmarkEditForm,
+                          color: color.hex,
+                        })
+                      }
+                      className={`w-10 h-10 rounded-lg transition-all ${
+                        bookmarkEditForm.color === color.hex
+                          ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                          : 'hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setIsBookmarkEditModalOpen(false);
+                  setEditingBookmarkGroup(null);
+                }}
+                className="flex-1 px-4 py-2 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleBookmarkSave}
+                className="flex-1 px-4 py-2 text-sm bg-green-500 text-white hover:bg-green-600 rounded-lg transition-colors font-medium"
+              >
+                저장
+              </button>
             </div>
           </div>
         </div>
