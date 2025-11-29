@@ -4,7 +4,7 @@ import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
-import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters } from './firebase';
+import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters, loadAllData as loadAllDataFromFirebase } from './firebase';
 import { saveTables as saveTablesToDB, loadAllData, initDB } from './idb';
 import {
   Plus,
@@ -227,8 +227,26 @@ export default function App() {
     const loadDataFromDB = async () => {
       try {
         await initDB(); // IndexedDB 초기화
-        await initFirebaseDB(); // Firebase 초기화 (백업용)
-        const { tables: dbTables, bookmarks: dbBookmarks, categories: dbCategories, filters: dbFilters } = await loadAllData();
+        await initFirebaseDB(); // Firebase 초기화
+        let { tables: dbTables, bookmarks: dbBookmarks, categories: dbCategories, filters: dbFilters } = await loadAllData();
+
+        // IndexedDB가 비어있으면 Firebase에서 로드 (폴백)
+        if (dbTables.length === 0 || dbBookmarks.length === 0) {
+          console.log('IndexedDB is empty, loading from Firebase...');
+          const firebaseData = await loadAllDataFromFirebase();
+          if (firebaseData.tables.length > 0) {
+            dbTables = firebaseData.tables;
+          }
+          if (firebaseData.bookmarks.length > 0) {
+            dbBookmarks = firebaseData.bookmarks;
+          }
+          if (firebaseData.categories.length > 0) {
+            dbCategories = firebaseData.categories;
+          }
+          if (firebaseData.filters.length > 0) {
+            dbFilters = firebaseData.filters;
+          }
+        }
 
         // 데이터 마이그레이션 헬퍼 함수
         const migrateTableData = (tables: TableDefinition[]): TableDefinition[] => {
@@ -241,7 +259,7 @@ export default function App() {
           }));
         };
 
-        // IndexedDB에 데이터가 있으면 로드 (마이그레이션 적용), 없으면 초기값 사용
+        // 데이터 설정
         const migratedTables = dbTables.length > 0 ? migrateTableData(dbTables) : initialTables;
         setTables(migratedTables);
         setBookmarks(dbBookmarks.length > 0 ? dbBookmarks : initialBookmarkGroups);
@@ -250,12 +268,34 @@ export default function App() {
         setIsDBLoaded(true);
       } catch (error) {
         console.error('Failed to load data from IndexedDB:', error);
-        // 오류 발생 시 초기값 사용
-        setTables(initialTables);
-        setBookmarks(initialBookmarkGroups);
-        setCategories(initialCategories);
-        setCustomFilters([]);
-        setIsDBLoaded(true);
+        // 오류 발생 시 Firebase에서 로드 시도
+        try {
+          console.log('Attempting to load from Firebase...');
+          const firebaseData = await loadAllDataFromFirebase();
+          const migrateTableData = (tables: TableDefinition[]): TableDefinition[] => {
+            return tables.map(table => ({
+              ...table,
+              rows: table.rows.map(row => ({
+                ...row,
+                _checklists: row._checklists || []
+              }))
+            }));
+          };
+          const migratedTables = firebaseData.tables.length > 0 ? migrateTableData(firebaseData.tables) : initialTables;
+          setTables(migratedTables);
+          setBookmarks(firebaseData.bookmarks.length > 0 ? firebaseData.bookmarks : initialBookmarkGroups);
+          setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
+          setCustomFilters(firebaseData.filters || []);
+          setIsDBLoaded(true);
+        } catch (firebaseError) {
+          console.error('Failed to load data from Firebase:', firebaseError);
+          // 최종 폴백: 초기값 사용
+          setTables(initialTables);
+          setBookmarks(initialBookmarkGroups);
+          setCategories(initialCategories);
+          setCustomFilters([]);
+          setIsDBLoaded(true);
+        }
       }
     };
 
