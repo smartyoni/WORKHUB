@@ -2,7 +2,7 @@
 import { TableDefinition, BookmarkGroup, AppCategory, CustomFilter } from './types';
 
 const DB_NAME = 'WORKHUB_DB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Store names
 const TABLES_STORE = 'tables';
