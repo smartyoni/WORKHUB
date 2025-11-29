@@ -194,6 +194,10 @@ export default function App() {
   const [newColumnType, setNewColumnType] = useState<ColumnType>(ColumnType.TEXT);
   const [newFilterConditions, setNewFilterConditions] = useState<FilterCondition[]>([]);
 
+  // Save Status
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState('');
+
   // --- CUSTOM CONFIRM MODAL STATE ---
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmModalMessage, setConfirmModalMessage] = useState('');
@@ -703,6 +707,35 @@ export default function App() {
       setNewColumnName('');
       setNewColumnType(ColumnType.TEXT);
       setIsAddColumnModalOpen(false);
+  };
+
+  const handleSaveTableOrder = async () => {
+      try {
+          setSaveStatus('saving');
+          setSaveMessage('');
+
+          // 테이블 순서를 IndexedDB에 저장
+          await saveTables(tables);
+
+          setSaveStatus('success');
+          setSaveMessage('테이블 순서가 저장되었습니다.');
+
+          // 2초 후 메시지 제거
+          setTimeout(() => {
+              setSaveStatus('idle');
+              setSaveMessage('');
+          }, 2000);
+      } catch (error) {
+          setSaveStatus('error');
+          setSaveMessage('저장에 실패했습니다.');
+          console.error('Failed to save table order:', error);
+
+          // 3초 후 메시지 제거
+          setTimeout(() => {
+              setSaveStatus('idle');
+              setSaveMessage('');
+          }, 3000);
+      }
   };
 
 
@@ -1563,6 +1596,28 @@ export default function App() {
              <Plus className="w-4 h-4" />
              테이블 추가
          </button>
+         <button
+            onClick={handleSaveTableOrder}
+            disabled={saveStatus === 'saving'}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ml-2 ${
+              saveStatus === 'success'
+                ? 'bg-green-50 text-green-600 hover:bg-green-100'
+                : saveStatus === 'error'
+                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                : 'bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+            title="현재 테이블 순서를 저장합니다"
+         >
+             <Save className="w-4 h-4" />
+             저장
+         </button>
+         {saveMessage && (
+            <span className={`text-xs font-medium ml-2 ${
+              saveStatus === 'success' ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {saveMessage}
+            </span>
+         )}
       </footer>
 
       {/* Add Column Modal */}
