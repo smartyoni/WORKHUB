@@ -1506,8 +1506,8 @@ export default function App() {
           </div>
 
           {/* Actual Table */}
-          <div className="flex-1 overflow-hidden px-6 pb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-[400px] flex flex-col">
+          <div className="flex-1 overflow-hidden px-6 pb-6 flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
                 <div className="overflow-x-auto overflow-y-auto flex-1">
                     <table className="w-full text-sm text-left whitespace-nowrap border-collapse">
                         <thead className="bg-purple-700 text-white sticky top-0 z-20 shadow-md">
