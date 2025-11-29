@@ -27,7 +27,9 @@ import {
   ListFilter,
   CheckCircle2,
   Circle,
-  Upload
+  Upload,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 // --- MOCK DATA INITIALIZATION ---
@@ -635,6 +637,22 @@ export default function App() {
           setIsConfirmModalOpen(false);
       });
       setIsConfirmModalOpen(true);
+  };
+
+  const handleMoveColumn = (colId: string, direction: 'left' | 'right') => {
+      if (!activeTable) return;
+      const currentIndex = activeTable.columns.findIndex(c => c.id === colId);
+      if (currentIndex === -1) return;
+
+      const newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= activeTable.columns.length) return;
+
+      const newColumns = [...activeTable.columns];
+      [newColumns[currentIndex], newColumns[newIndex]] = [newColumns[newIndex], newColumns[currentIndex]];
+
+      setTables(prev => prev.map(t =>
+          t.id === activeTable.id ? { ...t, columns: newColumns } : t
+      ));
   };
 
 
@@ -1335,15 +1353,39 @@ export default function App() {
                         <thead className="bg-purple-700 text-white sticky top-0 z-20 shadow-md">
                             <tr>
                                 {visibleColumns.map(col => (
-                                    <th 
-                                        key={col.id} 
-                                        className="px-4 py-3 font-medium border-r border-purple-600 last:border-none relative group select-none"
+                                    <th
+                                        key={col.id}
+                                        className="px-4 py-3 font-medium border-r border-purple-500 last:border-none relative group select-none"
                                         style={{ width: col.width, minWidth: col.width }}
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <span>{col.name}</span>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleMoveColumn(col.id, 'left');
+                                                    }}
+                                                    className="p-0.5 hover:bg-purple-600 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    disabled={visibleColumns.indexOf(col) === 0}
+                                                    title="컬럼 왼쪽으로 이동"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </button>
+                                                <span>{col.name}</span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleMoveColumn(col.id, 'right');
+                                                    }}
+                                                    className="p-0.5 hover:bg-purple-600 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    disabled={visibleColumns.indexOf(col) === visibleColumns.length - 1}
+                                                    title="컬럼 오른쪽으로 이동"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                             <div className="relative">
-                                                <MoreVertical 
+                                                <MoreVertical
                                                     className="w-4 h-4 opacity-50 cursor-pointer hover:opacity-100 transition-opacity"
                                                     onClick={(e) => handleMenuClick(e, col.id)}
                                                 />
@@ -1358,7 +1400,7 @@ export default function App() {
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-400">
                             {filteredRows.map((row) => (
                                 <tr 
                                     key={row.id} 
@@ -1366,9 +1408,9 @@ export default function App() {
                                     className={`cursor-pointer transition-colors ${selectedRowId === row.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                                 >
                                     {visibleColumns.map(col => (
-                                        <td 
-                                            key={col.id} 
-                                            className={`px-4 py-3 border-r border-gray-100 last:border-none overflow-hidden text-ellipsis ${col.id === 'col-2' || col.id === 'col-3' ? 'text-blue-500' : 'text-gray-600'}`}
+                                        <td
+                                            key={col.id}
+                                            className={`px-4 py-3 border-r border-gray-400 last:border-none overflow-hidden text-ellipsis ${col.id === 'col-2' || col.id === 'col-3' ? 'text-blue-500' : 'text-gray-600'}`}
                                             style={{ maxWidth: col.width }}
                                         >
                                             {row[col.id]}

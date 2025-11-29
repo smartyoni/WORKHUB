@@ -97,6 +97,7 @@ export default defineConfig({
   ],
   base: '/WORKHUB/', // GitHub Pages 배포를 위한 절대 경로 설정
   server: {
+    host: '127.0.0.1',
     port: 5173,
     strictPort: false,
   }
