@@ -2,7 +2,7 @@
 import { TableDefinition, BookmarkGroup, AppCategory, CustomFilter } from './types';
 
 const DB_NAME = 'WORKHUB_DB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Store names
 const TABLES_STORE = 'tables';
@@ -66,14 +66,12 @@ export const saveTables = async (tables: TableDefinition[]): Promise<void> => {
     clearRequest.onerror = () => reject(clearRequest.error);
   });
 
-  // 새 데이터 저장
-  for (const table of tables) {
-    await new Promise<void>((resolve, reject) => {
-      const addRequest = store.add(table);
-      addRequest.onsuccess = () => resolve();
-      addRequest.onerror = () => reject(addRequest.error);
-    });
-  }
+  // 배열 전체를 하나의 항목으로 저장 (순서 보장)
+  await new Promise<void>((resolve, reject) => {
+    const putRequest = store.put({ id: 'tables', data: tables });
+    putRequest.onsuccess = () => resolve();
+    putRequest.onerror = () => reject(putRequest.error);
+  });
 };
 
 /**
@@ -85,8 +83,11 @@ export const loadTables = async (): Promise<TableDefinition[]> => {
   const store = transaction.objectStore(TABLES_STORE);
 
   return new Promise((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result || []);
+    const request = store.get('tables');
+    request.onsuccess = () => {
+      const result = request.result;
+      resolve(result?.data || []);
+    };
     request.onerror = () => reject(request.error);
   });
 };
