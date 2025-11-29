@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Bookmark, BookmarkGroup } from '../types';
-import { Plus, X, Edit3, Copy, Clipboard } from 'lucide-react';
+import { Plus, X, Clipboard } from 'lucide-react';
 
 interface HeaderProps {
   groups: BookmarkGroup[];
@@ -122,42 +122,6 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                   onClick={() => item.url && window.open(item.url.startsWith('http') ? item.url : `https://${item.url}`, '_blank')}
                 >
                   <span className="truncate w-full px-1 pt-1">{item.name}</span>
-                  
-                  {/* Hover Actions */}
-                  <div className="absolute top-0.5 right-0.5 hidden group-hover:flex gap-0.5 bg-white/90 shadow rounded-lg p-0.5 z-10 ring-1 ring-gray-100">
-                     <button 
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          copyBookmark(item);
-                      }}
-                      className="p-1 hover:bg-green-50 rounded text-green-600"
-                      title="복사"
-                     >
-                         <Copy className="w-2.5 h-2.5"/>
-                     </button>
-                     <button 
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          setTempName(item.name);
-                          setTempUrl(item.url);
-                          setEditingBookmark({ groupId: group.id, bookmarkId: item.id });
-                      }}
-                      className="p-1 hover:bg-blue-50 rounded text-blue-600"
-                      title="수정"
-                     >
-                         <Edit3 className="w-2.5 h-2.5"/>
-                     </button>
-                     <button 
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          deleteBookmark(group.id, item.id, item.name);
-                      }}
-                      className="p-1 hover:bg-red-50 rounded text-red-600"
-                      title="삭제"
-                     >
-                         <X className="w-2.5 h-2.5"/>
-                     </button>
-                  </div>
                 </div>
               ))}
 
