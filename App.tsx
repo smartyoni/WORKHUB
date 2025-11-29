@@ -184,9 +184,14 @@ export default function App() {
   // --- FILTER STATE ---
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  
+
   // Filter Creation Form State
   const [newFilterName, setNewFilterName] = useState('');
+
+  // Add Column Modal State
+  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
+  const [newColumnType, setNewColumnType] = useState<ColumnType>(ColumnType.TEXT);
   const [newFilterConditions, setNewFilterConditions] = useState<FilterCondition[]>([]);
 
   // --- CUSTOM CONFIRM MODAL STATE ---
@@ -666,6 +671,38 @@ export default function App() {
       [newTables[currentIndex], newTables[newIndex]] = [newTables[newIndex], newTables[currentIndex]];
 
       setTables(newTables);
+  };
+
+  const handleAddColumn = () => {
+      if (!newColumnName.trim() || !activeTable) return;
+
+      const newColumn: Column = {
+          id: `col-${Date.now()}`,
+          name: newColumnName,
+          type: newColumnType,
+          width: 180
+      };
+
+      setTables(prev => prev.map(table => {
+          if (table.id !== activeTableId) return table;
+
+          // Add column to table
+          const updatedTable = {
+              ...table,
+              columns: [...table.columns, newColumn],
+              // Add empty cell for new column in all existing rows
+              rows: table.rows.map(row => ({
+                  ...row,
+                  [newColumn.id]: ''
+              }))
+          };
+          return updatedTable;
+      }));
+
+      // Reset form and close modal
+      setNewColumnName('');
+      setNewColumnType(ColumnType.TEXT);
+      setIsAddColumnModalOpen(false);
   };
 
 
@@ -1335,7 +1372,7 @@ export default function App() {
                     className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
-                    컬럼추가
+                    행추가
                 </button>
              </div>
           </div>
@@ -1411,6 +1448,15 @@ export default function App() {
                                         />
                                     </th>
                                 ))}
+                                <th className="px-4 py-3 font-medium border-r border-purple-500 relative select-none bg-purple-700 sticky right-0 z-19">
+                                    <button
+                                        onClick={() => setIsAddColumnModalOpen(true)}
+                                        className="p-1 hover:bg-purple-600 rounded transition-colors"
+                                        title="새로운 컬럼 추가"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-400">
@@ -1520,6 +1566,68 @@ export default function App() {
              테이블 추가
          </button>
       </footer>
+
+      {/* Add Column Modal */}
+      {isAddColumnModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm">
+              <div className="bg-white rounded-xl shadow-2xl w-[450px] animate-in zoom-in duration-200">
+                  <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                      <h2 className="text-xl font-bold text-gray-800">새로운 컬럼 추가</h2>
+                      <button onClick={() => setIsAddColumnModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">컬럼 이름</label>
+                          <input
+                              type="text"
+                              value={newColumnName}
+                              onChange={(e) => setNewColumnName(e.target.value)}
+                              placeholder="컬럼 이름을 입력하세요"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleAddColumn();
+                              }}
+                          />
+                      </div>
+
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">데이터 타입</label>
+                          <select
+                              value={newColumnType}
+                              onChange={(e) => setNewColumnType(e.target.value as ColumnType)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                              <option value={ColumnType.TEXT}>텍스트</option>
+                              <option value={ColumnType.NUMBER}>숫자</option>
+                              <option value={ColumnType.DATE_AUTO}>자동 날짜</option>
+                              <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
+                              <option value={ColumnType.TIME_AUTO}>자동 시간</option>
+                              <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-xl">
+                      <button
+                          onClick={() => setIsAddColumnModalOpen(false)}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                      >
+                          취소
+                      </button>
+                      <button
+                          onClick={handleAddColumn}
+                          disabled={!newColumnName.trim()}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white rounded-lg transition-colors font-medium"
+                      >
+                          추가
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* Category Settings Modal */}
       {isCategorySettingsModalOpen && (
