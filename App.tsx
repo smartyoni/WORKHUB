@@ -4,8 +4,8 @@ import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
-import { initDB, loadAllData, saveBookmarks, saveCategories, saveFilters } from './firebase';
-import { saveTables as saveTablesToDB } from './idb';
+import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters } from './firebase';
+import { saveTables as saveTablesToDB, loadAllData, initDB } from './idb';
 import {
   Plus,
   Search,
@@ -226,7 +226,8 @@ export default function App() {
   useEffect(() => {
     const loadDataFromDB = async () => {
       try {
-        await initDB();
+        await initDB(); // IndexedDB 초기화
+        await initFirebaseDB(); // Firebase 초기화 (백업용)
         const { tables: dbTables, bookmarks: dbBookmarks, categories: dbCategories, filters: dbFilters } = await loadAllData();
 
         // 데이터 마이그레이션 헬퍼 함수
