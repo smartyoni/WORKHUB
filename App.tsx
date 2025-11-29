@@ -4,7 +4,7 @@ import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
-import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters, loadAllData as loadAllDataFromFirebase } from './firebase';
+import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase } from './firebase';
 import { saveTables as saveTablesToDB, loadAllData, initDB } from './idb';
 import {
   Plus,
@@ -489,11 +489,14 @@ export default function App() {
 
   const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters]);
 
-  // --- AUTO SAVE TO INDEXEDDB ---
-  // Save tables to IndexedDB whenever they change
+  // --- AUTO SAVE TO INDEXEDDB & FIREBASE ---
+  // Save tables to IndexedDB and Firebase whenever they change
   useEffect(() => {
     if (isDBLoaded && tables.length > 0) {
-      saveTablesToDB(tables).catch(error => console.error('Failed to save tables:', error));
+      Promise.all([
+        saveTablesToDB(tables).catch(error => console.error('Failed to save tables to IndexedDB:', error)),
+        saveTablesFirebase(tables).catch(error => console.error('Failed to save tables to Firebase:', error))
+      ]).catch(error => console.error('Failed to save tables:', error));
     }
   }, [tables, isDBLoaded]);
 
