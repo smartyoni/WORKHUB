@@ -155,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                     });
                   }}
                 >
-                  <span className="truncate w-full px-1 flex items-center justify-center">{item.name}</span>
+                  <span className="truncate w-full px-1 flex items-center justify-center font-bold">{item.name}</span>
                 </div>
               ))}
 
