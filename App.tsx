@@ -4,7 +4,8 @@ import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
-import { initDB, loadAllData, saveTables, saveBookmarks, saveCategories, saveFilters } from './firebase';
+import { initDB, loadAllData, saveBookmarks, saveCategories, saveFilters } from './firebase';
+import { saveTables as saveTablesToDB } from './idb';
 import {
   Plus,
   Search,
@@ -451,7 +452,7 @@ export default function App() {
   // Save tables to IndexedDB whenever they change
   useEffect(() => {
     if (isDBLoaded && tables.length > 0) {
-      saveTables(tables).catch(error => console.error('Failed to save tables:', error));
+      saveTablesToDB(tables).catch(error => console.error('Failed to save tables:', error));
     }
   }, [tables, isDBLoaded]);
 
@@ -715,7 +716,7 @@ export default function App() {
           setSaveMessage('');
 
           // 테이블 순서를 IndexedDB에 저장
-          await saveTables(tables);
+          await saveTablesToDB(tables);
 
           setSaveStatus('success');
           setSaveMessage('테이블 순서가 저장되었습니다.');
