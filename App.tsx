@@ -293,10 +293,32 @@ export default function App() {
           }));
         };
 
+        // 북마크 마이그레이션: color와 area 속성 추가
+        const migrateBookmarks = (bookmarks: BookmarkGroup[]): BookmarkGroup[] => {
+          const colorMap: Record<string, string> = {
+            '호실관리': '#FBBF24',
+            '계약서작성': '#3B82F6',
+            '사무실관리,시세조회': '#F97316',
+            '개발도구 모음': '#10B981'
+          };
+          const areaMap: Record<string, number> = {
+            '호실관리': 1,
+            '계약서작성': 2,
+            '사무실관리,시세조회': 3,
+            '개발도구 모음': 4
+          };
+          return bookmarks.map((bookmark, index) => ({
+            ...bookmark,
+            color: bookmark.color || colorMap[bookmark.name] || BOOKMARK_COLORS[index % BOOKMARK_COLORS.length].hex,
+            area: bookmark.area || areaMap[bookmark.name] || (index + 1)
+          }));
+        };
+
         // 데이터 설정
         const migratedTables = dbTables.length > 0 ? migrateTableData(dbTables) : initialTables;
+        const migratedBookmarks = dbBookmarks.length > 0 ? migrateBookmarks(dbBookmarks) : initialBookmarkGroups;
         setTables(migratedTables);
-        setBookmarks(dbBookmarks.length > 0 ? dbBookmarks : initialBookmarkGroups);
+        setBookmarks(migratedBookmarks);
         setCategories(dbCategories.length > 0 ? dbCategories : initialCategories);
         setCustomFilters(dbFilters || []);
 
@@ -322,9 +344,30 @@ export default function App() {
               }))
             }));
           };
+          // 북마크 마이그레이션: color와 area 속성 추가
+          const migrateBookmarks = (bookmarks: BookmarkGroup[]): BookmarkGroup[] => {
+            const colorMap: Record<string, string> = {
+              '호실관리': '#FBBF24',
+              '계약서작성': '#3B82F6',
+              '사무실관리,시세조회': '#F97316',
+              '개발도구 모음': '#10B981'
+            };
+            const areaMap: Record<string, number> = {
+              '호실관리': 1,
+              '계약서작성': 2,
+              '사무실관리,시세조회': 3,
+              '개발도구 모음': 4
+            };
+            return bookmarks.map((bookmark, index) => ({
+              ...bookmark,
+              color: bookmark.color || colorMap[bookmark.name] || BOOKMARK_COLORS[index % BOOKMARK_COLORS.length].hex,
+              area: bookmark.area || areaMap[bookmark.name] || (index + 1)
+            }));
+          };
           const migratedTables = firebaseData.tables.length > 0 ? migrateTableData(firebaseData.tables) : initialTables;
+          const migratedBookmarks = firebaseData.bookmarks.length > 0 ? migrateBookmarks(firebaseData.bookmarks) : initialBookmarkGroups;
           setTables(migratedTables);
-          setBookmarks(firebaseData.bookmarks.length > 0 ? firebaseData.bookmarks : initialBookmarkGroups);
+          setBookmarks(migratedBookmarks);
           setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
           setCustomFilters(firebaseData.filters || []);
 

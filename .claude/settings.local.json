@@ -7,7 +7,16 @@
       "Bash(netstat:*)",
       "Bash(timeout 5 npm:*)",
       "Bash(taskkill:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(findstr:*)",
+      "Bash(dir \"C:\\Users\\User\\Desktop\\앱개발\\workhub\")",
+      "Bash(find:*)",
+      "Bash(dir \"C:\\Users\\User\\Desktop\\앱개발\\workhub\\components\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []
