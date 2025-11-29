@@ -1374,6 +1374,13 @@ export default function App() {
                     <Plus className="w-4 h-4" />
                     행추가
                 </button>
+                <button
+                    onClick={() => setIsAddColumnModalOpen(true)}
+                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2"
+                >
+                    <Plus className="w-4 h-4" />
+                    컬럼추가
+                </button>
              </div>
           </div>
 
@@ -1448,15 +1455,6 @@ export default function App() {
                                         />
                                     </th>
                                 ))}
-                                <th className="px-4 py-3 font-medium border-r border-purple-500 relative select-none bg-purple-700 sticky right-0 z-19">
-                                    <button
-                                        onClick={() => setIsAddColumnModalOpen(true)}
-                                        className="p-1 hover:bg-purple-600 rounded transition-colors"
-                                        title="새로운 컬럼 추가"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-400">
