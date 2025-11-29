@@ -655,6 +655,19 @@ export default function App() {
       ));
   };
 
+  const handleMoveTable = (tableId: string, direction: 'left' | 'right') => {
+      const currentIndex = tables.findIndex(t => t.id === tableId);
+      if (currentIndex === -1) return;
+
+      const newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= tables.length) return;
+
+      const newTables = [...tables];
+      [newTables[currentIndex], newTables[newIndex]] = [newTables[newIndex], newTables[currentIndex]];
+
+      setTables(newTables);
+  };
+
 
   const addTable = () => {
     if (!newTableName.trim()) return;
@@ -1458,24 +1471,48 @@ export default function App() {
 
       {/* 4. Footer (Tabs) */}
       <footer className="h-12 bg-gray-100 border-t border-gray-200 flex items-center px-2 gap-1 overflow-x-auto shrink-0">
-         {tables.map(table => (
-             <button 
-                key={table.id}
-                onClick={() => {
-                    setActiveTableId(table.id);
-                    setSelectedRowId(null);
-                }}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    activeTableId === table.id 
-                    ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200' 
-                    : 'text-gray-500 hover:bg-gray-200'
-                }`}
-             >
-                 <TableIcon className="w-4 h-4" />
-                 {table.name}
-             </button>
+         {tables.map((table, index) => (
+             <div key={table.id} className="flex items-center gap-0.5">
+                 <button
+                     onClick={(e) => {
+                         e.stopPropagation();
+                         handleMoveTable(table.id, 'left');
+                     }}
+                     className="p-1 hover:bg-gray-300 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                     disabled={index === 0}
+                     title="테이블 왼쪽으로 이동"
+                 >
+                     <ChevronLeft className="w-3 h-3" />
+                 </button>
+                 <button
+                    key={table.id}
+                    onClick={() => {
+                        setActiveTableId(table.id);
+                        setSelectedRowId(null);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        activeTableId === table.id
+                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200'
+                        : 'text-gray-500 hover:bg-gray-200'
+                    }`}
+                 >
+                     <TableIcon className="w-4 h-4" />
+                     {table.name}
+                 </button>
+                 <button
+                     onClick={(e) => {
+                         e.stopPropagation();
+                         handleMoveTable(table.id, 'right');
+                     }}
+                     className="p-1 hover:bg-gray-300 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                     disabled={index === tables.length - 1}
+                     title="테이블 오른쪽으로 이동"
+                 >
+                     <ChevronRight className="w-3 h-3" />
+                 </button>
+             </div>
          ))}
-         <button 
+         <button
             onClick={() => setIsTableModalOpen(true)}
             className="flex items-center gap-1 px-3 py-1.5 text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors ml-2"
          >
