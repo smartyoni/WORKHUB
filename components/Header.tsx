@@ -130,7 +130,13 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
               {group.items.slice(0, 12).map((item) => (
                 <div
                   key={item.id}
-                  className={`relative group rounded-lg text-xs font-medium cursor-pointer flex items-center justify-center text-center transition-all shadow-sm border ${itemColors[group.id]} hover:shadow-md select-none opacity-100`}
+                  className={`relative group rounded-lg text-xs font-medium cursor-pointer flex items-center justify-center text-center transition-all shadow-sm border-2 hover:shadow-md select-none opacity-100`}
+                  style={{
+                    backgroundColor: item.color || '#FFFFFF',
+                    borderColor: item.color ? `${item.color}` : '#9CA3AF',
+                    color: '#1F2937',
+                    maxHeight: '90%'
+                  }}
                   onClick={() => item.url && window.open(item.url.startsWith('http') ? item.url : `https://${item.url}`, '_blank')}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -149,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                     });
                   }}
                 >
-                  <span className="truncate w-full px-1 pt-1">{item.name}</span>
+                  <span className="truncate w-full px-1 flex items-center justify-center">{item.name}</span>
                 </div>
               ))}
 
