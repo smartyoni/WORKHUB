@@ -5,7 +5,6 @@ import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
 import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase } from './firebase';
-import { saveTables as saveTablesToDB, loadAllData, initDB } from './idb';
 import {
   Plus,
   Search,
@@ -50,7 +49,7 @@ const BOOKMARK_COLORS = [
 const initialBookmarkGroups: BookmarkGroup[] = [
   {
     id: 'group-1',
-    name: '호실관리',
+    name: '영역1',
     color: '#FBBF24',
     area: 1,
     items: [
@@ -64,7 +63,7 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   },
   {
     id: 'group-2',
-    name: '계약서작성',
+    name: '영역2',
     color: '#3B82F6',
     area: 2,
     items: [
@@ -76,7 +75,7 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   },
   {
     id: 'group-3',
-    name: '사무실관리,시세조회',
+    name: '영역3',
     color: '#F97316',
     area: 3,
     items: [
@@ -88,7 +87,7 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   },
   {
     id: 'group-4',
-    name: '개발도구 모음',
+    name: '영역4',
     color: '#10B981',
     area: 4,
     items: [
@@ -256,31 +255,12 @@ export default function App() {
   // Get Filters for current table
   const currentTableFilters = customFilters.filter(f => f.tableId === activeTableId);
 
-  // --- INDEXEDDB INITIALIZATION & DATA LOADING ---
+  // --- FIREBASE INITIALIZATION & DATA LOADING ---
   useEffect(() => {
-    const loadDataFromDB = async () => {
+    const loadDataFromFirebase = async () => {
       try {
-        await initDB(); // IndexedDB 초기화
         await initFirebaseDB(); // Firebase 초기화
-        let { tables: dbTables, bookmarks: dbBookmarks, categories: dbCategories, filters: dbFilters } = await loadAllData();
-
-        // IndexedDB가 비어있으면 Firebase에서 로드 (폴백)
-        if (dbTables.length === 0 || dbBookmarks.length === 0) {
-          console.log('IndexedDB is empty, loading from Firebase...');
-          const firebaseData = await loadAllDataFromFirebase();
-          if (firebaseData.tables.length > 0) {
-            dbTables = firebaseData.tables;
-          }
-          if (firebaseData.bookmarks.length > 0) {
-            dbBookmarks = firebaseData.bookmarks;
-          }
-          if (firebaseData.categories.length > 0) {
-            dbCategories = firebaseData.categories;
-          }
-          if (firebaseData.filters.length > 0) {
-            dbFilters = firebaseData.filters;
-          }
-        }
+        const firebaseData = await loadAllDataFromFirebase();
 
         // 데이터 마이그레이션 헬퍼 함수
         const migrateTableData = (tables: TableDefinition[]): TableDefinition[] => {
@@ -307,92 +287,46 @@ export default function App() {
             '사무실관리,시세조회': 3,
             '개발도구 모음': 4
           };
+          const nameMap: Record<string, string> = {
+            '호실관리': '영역1',
+            '계약서작성': '영역2',
+            '사무실관리,시세조회': '영역3',
+            '개발도구 모음': '영역4'
+          };
           return bookmarks.map((bookmark, index) => ({
             ...bookmark,
+            name: nameMap[bookmark.name] || bookmark.name,
             color: bookmark.color || colorMap[bookmark.name] || BOOKMARK_COLORS[index % BOOKMARK_COLORS.length].hex,
             area: bookmark.area || areaMap[bookmark.name] || (index + 1)
           }));
         };
 
         // 데이터 설정
-        const migratedTables = dbTables.length > 0 ? migrateTableData(dbTables) : initialTables;
-        const migratedBookmarks = dbBookmarks.length > 0 ? migrateBookmarks(dbBookmarks) : initialBookmarkGroups;
+        const migratedTables = firebaseData.tables.length > 0 ? migrateTableData(firebaseData.tables) : initialTables;
+        const migratedBookmarks = firebaseData.bookmarks.length > 0 ? migrateBookmarks(firebaseData.bookmarks) : initialBookmarkGroups;
         setTables(migratedTables);
         setBookmarks(migratedBookmarks);
-        setCategories(dbCategories.length > 0 ? dbCategories : initialCategories);
-        setCustomFilters(dbFilters || []);
+        setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
+        setCustomFilters(firebaseData.filters || []);
 
         // ✅ 데이터 소스 결정 (초기값 vs 실제 데이터)
-        // 실제 데이터가 로드된 경우만 'loaded' 설정 → 자동 저장 활성화
-        // 초기값만 사용하는 경우는 'initial' 유지 → 자동 저장 비활성화
-        const hasRealData = dbTables.length > 0 || dbBookmarks.length > 0;
+        const hasRealData = firebaseData.tables.length > 0 || firebaseData.bookmarks.length > 0;
         setDataSource(hasRealData ? 'loaded' : 'initial');
 
         setIsDBLoaded(true);
       } catch (error) {
-        console.error('Failed to load data from IndexedDB:', error);
-        // 오류 발생 시 Firebase에서 로드 시도
-        try {
-          console.log('Attempting to load from Firebase...');
-          const firebaseData = await loadAllDataFromFirebase();
-          const migrateTableData = (tables: TableDefinition[]): TableDefinition[] => {
-            return tables.map(table => ({
-              ...table,
-              rows: table.rows.map(row => ({
-                ...row,
-                _checklists: row._checklists || []
-              }))
-            }));
-          };
-          // 북마크 마이그레이션: color와 area 속성 추가
-          const migrateBookmarks = (bookmarks: BookmarkGroup[]): BookmarkGroup[] => {
-            const colorMap: Record<string, string> = {
-              '호실관리': '#FBBF24',
-              '계약서작성': '#3B82F6',
-              '사무실관리,시세조회': '#F97316',
-              '개발도구 모음': '#10B981'
-            };
-            const areaMap: Record<string, number> = {
-              '호실관리': 1,
-              '계약서작성': 2,
-              '사무실관리,시세조회': 3,
-              '개발도구 모음': 4
-            };
-            return bookmarks.map((bookmark, index) => ({
-              ...bookmark,
-              color: bookmark.color || colorMap[bookmark.name] || BOOKMARK_COLORS[index % BOOKMARK_COLORS.length].hex,
-              area: bookmark.area || areaMap[bookmark.name] || (index + 1)
-            }));
-          };
-          const migratedTables = firebaseData.tables.length > 0 ? migrateTableData(firebaseData.tables) : initialTables;
-          const migratedBookmarks = firebaseData.bookmarks.length > 0 ? migrateBookmarks(firebaseData.bookmarks) : initialBookmarkGroups;
-          setTables(migratedTables);
-          setBookmarks(migratedBookmarks);
-          setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
-          setCustomFilters(firebaseData.filters || []);
-
-          // ✅ Firebase에서 로드한 경우도 dataSource 설정
-          const hasFirebaseData = firebaseData.tables.length > 0 || firebaseData.bookmarks.length > 0;
-          setDataSource(hasFirebaseData ? 'loaded' : 'initial');
-
-          setIsDBLoaded(true);
-        } catch (firebaseError) {
-          console.error('Failed to load data from Firebase:', firebaseError);
-          // 최종 폴백: 초기값 사용
-          setTables(initialTables);
-          setBookmarks(initialBookmarkGroups);
-          setCategories(initialCategories);
-          setCustomFilters([]);
-
-          // ⚠️ 초기값만 사용하는 경우 자동 저장 비활성화
-          setDataSource('initial');
-
-          setIsDBLoaded(true);
-        }
+        console.error('Failed to load data from Firebase:', error);
+        // 최종 폴백: 초기값 사용
+        setTables(initialTables);
+        setBookmarks(initialBookmarkGroups);
+        setCategories(initialCategories);
+        setCustomFilters([]);
+        setDataSource('initial');
+        setIsDBLoaded(true);
       }
     };
 
-    loadDataFromDB();
+    loadDataFromFirebase();
   }, []);
 
   // --- MOBILE WINDOW RESIZE LISTENER ---
@@ -582,41 +516,34 @@ export default function App() {
 
   const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters]);
 
-  // --- AUTO SAVE TO INDEXEDDB & FIREBASE ---
+  // --- AUTO SAVE TO FIREBASE ---
   // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
 
-  // Save tables to IndexedDB and Firebase whenever they change
+  // Save tables to Firebase whenever they change
   useEffect(() => {
-    // 조건: DB 로드 완료 AND 실제 데이터 존재 AND 실제 로드된 데이터
     if (isDBLoaded && tables.length > 0 && dataSource === 'loaded') {
-      Promise.all([
-        saveTablesToDB(tables).catch(error => console.error('Failed to save tables to IndexedDB:', error)),
-        saveTablesFirebase(tables).catch(error => console.error('Failed to save tables to Firebase:', error))
-      ]).catch(error => console.error('Failed to save tables:', error));
+      saveTablesFirebase(tables).catch(error => console.error('Failed to save tables to Firebase:', error));
     }
   }, [tables, isDBLoaded, dataSource]);
 
-  // Save bookmarks to IndexedDB whenever they change
+  // Save bookmarks to Firebase whenever they change
   useEffect(() => {
-    // 조건: DB 로드 완료 AND 실제 데이터 존재 AND 실제 로드된 데이터
     if (isDBLoaded && bookmarks.length > 0 && dataSource === 'loaded') {
-      saveBookmarks(bookmarks).catch(error => console.error('Failed to save bookmarks:', error));
+      saveBookmarks(bookmarks).catch(error => console.error('Failed to save bookmarks to Firebase:', error));
     }
   }, [bookmarks, isDBLoaded, dataSource]);
 
-  // Save categories to IndexedDB whenever they change
+  // Save categories to Firebase whenever they change
   useEffect(() => {
-    // 조건: DB 로드 완료 AND 카테고리 존재 AND 실제 로드된 데이터
     if (isDBLoaded && categories.length > 0 && dataSource === 'loaded') {
-      saveCategories(categories).catch(error => console.error('Failed to save categories:', error));
+      saveCategories(categories).catch(error => console.error('Failed to save categories to Firebase:', error));
     }
   }, [categories, isDBLoaded, dataSource]);
 
-  // Save filters to IndexedDB whenever they change
+  // Save filters to Firebase whenever they change
   useEffect(() => {
-    // 필터는 특정 테이블의 필터이므로, 실제 데이터가 로드된 경우에만 저장
     if (isDBLoaded && dataSource === 'loaded') {
-      saveFilters(customFilters).catch(error => console.error('Failed to save filters:', error));
+      saveFilters(customFilters).catch(error => console.error('Failed to save filters to Firebase:', error));
     }
   }, [customFilters, isDBLoaded, dataSource]);
 
@@ -858,8 +785,8 @@ export default function App() {
           setSaveStatus('saving');
           setSaveMessage('');
 
-          // 테이블 순서를 IndexedDB에 저장
-          await saveTablesToDB(tables);
+          // 테이블 순서를 Firebase에 저장
+          await saveTablesFirebase(tables);
 
           setSaveStatus('success');
           setSaveMessage('테이블 순서가 저장되었습니다.');

@@ -16,14 +16,26 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
   const [editingBookmark, setEditingBookmark] = useState<{groupId: string, bookmarkId?: string} | null>(null);
   const [tempName, setTempName] = useState('');
   const [tempUrl, setTempUrl] = useState('');
+  const [tempColor, setTempColor] = useState('#FFFFFF');
+  const [contextMenu, setContextMenu] = useState<{groupId: string, bookmarkId: string, x: number, y: number} | null>(null);
   
   // Clipboard State
   const [clipboard, setClipboard] = useState<Bookmark | null>(null);
+
+  // Context Menu editing state
+  const [contextMenuEdit, setContextMenuEdit] = useState<{
+    groupId: string;
+    bookmarkId: string;
+    name: string;
+    url: string;
+    color: string;
+  } | null>(null);
 
   const addBookmark = (groupId: string) => {
     setEditingBookmark({ groupId });
     setTempName('');
     setTempUrl('');
+    setTempColor('#FFFFFF');
   };
 
   const saveBookmark = () => {
@@ -35,15 +47,15 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
       if (editingBookmark.bookmarkId) {
         return {
           ...group,
-          items: group.items.map(item => item.id === editingBookmark.bookmarkId 
-            ? { ...item, name: tempName, url: tempUrl } 
+          items: group.items.map(item => item.id === editingBookmark.bookmarkId
+            ? { ...item, name: tempName, url: tempUrl, color: tempColor }
             : item
           )
         };
       } else {
         return {
           ...group,
-          items: [...group.items, { id: Date.now().toString(), name: tempName, url: tempUrl }]
+          items: [...group.items, { id: Date.now().toString(), name: tempName, url: tempUrl, color: tempColor }]
         };
       }
     }));
@@ -116,10 +128,26 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
             <div className="grid grid-cols-4 grid-rows-3 gap-2 h-full">
               {/* Render existing bookmarks */}
               {group.items.slice(0, 12).map((item) => (
-                <div 
-                  key={item.id} 
+                <div
+                  key={item.id}
                   className={`relative group rounded-lg text-xs font-medium cursor-pointer flex items-center justify-center text-center transition-all shadow-sm border ${itemColors[group.id]} hover:shadow-md select-none opacity-100`}
                   onClick={() => item.url && window.open(item.url.startsWith('http') ? item.url : `https://${item.url}`, '_blank')}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenuEdit({
+                      groupId: group.id,
+                      bookmarkId: item.id,
+                      name: item.name,
+                      url: item.url,
+                      color: item.color || '#FFFFFF'
+                    });
+                    setContextMenu({
+                      groupId: group.id,
+                      bookmarkId: item.id,
+                      x: e.clientX,
+                      y: e.clientY
+                    });
+                  }}
                 >
                   <span className="truncate w-full px-1 pt-1">{item.name}</span>
                 </div>
@@ -159,6 +187,168 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
         );
       })}
 
+      {/* Right-click Context Menu */}
+      {contextMenu && contextMenuEdit && (
+        <>
+          <div
+            className="fixed inset-0"
+            onClick={() => {
+              setContextMenu(null);
+              setContextMenuEdit(null);
+            }}
+          />
+          <div
+            className="fixed bg-white rounded-lg shadow-xl border border-gray-200 z-50 w-80 animate-in fade-in zoom-in duration-150 overflow-y-auto max-h-[80vh]"
+            style={{
+              left: `${contextMenu.x}px`,
+              top: `${contextMenu.y}px`,
+            }}
+          >
+            <div className="p-4 space-y-4">
+              {/* 이름 */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">이름</label>
+                <input
+                  type="text"
+                  value={contextMenuEdit.name}
+                  onChange={(e) => setContextMenuEdit({ ...contextMenuEdit, name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              {/* URL */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">URL</label>
+                <input
+                  type="text"
+                  value={contextMenuEdit.url}
+                  onChange={(e) => setContextMenuEdit({ ...contextMenuEdit, url: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              {/* 영역(그룹 선택) */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">영역</label>
+                <select
+                  value={contextMenuEdit.groupId}
+                  onChange={(e) => {
+                    const newGroupId = e.target.value;
+                    setContextMenuEdit({ ...contextMenuEdit, groupId: newGroupId });
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                >
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 색상 */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-2">색상</label>
+                <div className="flex gap-2 flex-wrap">
+                  {['#3B82F6', '#F97316', '#22C55E', '#EC4899', '#F472B6', '#FBBF24', '#86EFAC', '#FCD34D', '#FFFFFF'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setContextMenuEdit({ ...contextMenuEdit, color })}
+                      className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                        contextMenuEdit.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-blue-500' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-2 pt-2 justify-end border-t">
+                <button
+                  onClick={() => {
+                    setContextMenu(null);
+                    setContextMenuEdit(null);
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    setIsConfirmModalOpen(true);
+                    setConfirmModalMessage(`북마크 '${contextMenuEdit.name}'을(를) 정말 삭제하시겠습니까?`);
+                    setConfirmModalAction(() => () => {
+                      setGroups(prev => prev.map(group => {
+                        if (group.id !== contextMenu.groupId) return group;
+                        return { ...group, items: group.items.filter(i => i.id !== contextMenu.bookmarkId) };
+                      }));
+                      setIsConfirmModalOpen(false);
+                      setConfirmModalAction(null);
+                      setContextMenu(null);
+                      setContextMenuEdit(null);
+                    });
+                  }}
+                  className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+                >
+                  삭제
+                </button>
+                <button
+                  onClick={() => {
+                    // If moving to different group, remove from old group and add to new
+                    if (contextMenuEdit.groupId !== contextMenu.groupId) {
+                      setGroups(prev => prev.map(group => {
+                        // Remove from old group
+                        if (group.id === contextMenu.groupId) {
+                          return { ...group, items: group.items.filter(i => i.id !== contextMenu.bookmarkId) };
+                        }
+                        // Add to new group
+                        if (group.id === contextMenuEdit.groupId) {
+                          return {
+                            ...group,
+                            items: [...group.items, {
+                              id: contextMenu.bookmarkId,
+                              name: contextMenuEdit.name,
+                              url: contextMenuEdit.url,
+                              color: contextMenuEdit.color
+                            }]
+                          };
+                        }
+                        return group;
+                      }));
+                    } else {
+                      // Update in same group
+                      setGroups(prev => prev.map(group => {
+                        if (group.id !== contextMenuEdit.groupId) return group;
+                        return {
+                          ...group,
+                          items: group.items.map(item =>
+                            item.id === contextMenu.bookmarkId
+                              ? {
+                                  ...item,
+                                  name: contextMenuEdit.name,
+                                  url: contextMenuEdit.url,
+                                  color: contextMenuEdit.color
+                                }
+                              : item
+                          )
+                        };
+                      }));
+                    }
+                    setContextMenu(null);
+                    setContextMenuEdit(null);
+                  }}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  저장
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Bookmark Modal */}
       {editingBookmark && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 backdrop-blur-[1px]">
@@ -180,13 +370,29 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                 </div>
                 <div>
                     <label className="text-xs font-semibold text-gray-500 mb-1 block">링크 (선택)</label>
-                    <input 
+                    <input
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                         placeholder="URL 입력"
                         value={tempUrl}
                         onChange={e => setTempUrl(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && saveBookmark()}
                     />
+                </div>
+                <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-2 block">색상</label>
+                    <div className="flex gap-2 flex-wrap">
+                        {['#3B82F6', '#F97316', '#22C55E', '#EC4899', '#F472B6', '#FBBF24', '#86EFAC', '#FCD34D', '#FFFFFF'].map((color) => (
+                            <button
+                                key={color}
+                                onClick={() => setTempColor(color)}
+                                className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                                    tempColor === color ? 'border-gray-800 ring-2 ring-offset-1 ring-blue-500' : 'border-gray-300'
+                                }`}
+                                style={{ backgroundColor: color }}
+                                title={color}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">

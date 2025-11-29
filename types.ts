@@ -48,6 +48,7 @@ export interface Bookmark {
   id: string;
   name: string;
   url: string; // Or descriptive text
+  color?: string; // Hex color code (e.g., "#3B82F6")
 }
 
 export interface BookmarkGroup {
