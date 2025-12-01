@@ -287,9 +287,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
 
           {/* Basic Info */}
-          <div className="space-y-3">
+          <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-700">기본 정보</h3>
+              <h3 className="text-xs font-bold text-gray-700">기본 정보</h3>
               {isEditingInfo ? (
                 <button
                   onClick={saveChanges}
@@ -307,7 +307,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               )}
             </div>
 
-            <div className="space-y-2 text-xs">
+            <div className="space-y-0.5 text-xs">
               {columns.map((col) => (
                 <div key={col.id} className="flex flex-wrap gap-2 items-start">
                   <span className="text-gray-800 font-bold whitespace-nowrap">{col.name}:</span>
@@ -437,9 +437,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
 
         {/* Basic Info */}
-        <div className="space-y-3">
+        <div className="space-y-1">
           <div className="flex items-center justify-between border-b border-gray-200 pb-2"> {/* This is the container for h3 and the button */}
-            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-gray-700 flex items-center gap-2">
               <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
               기본 정보
             </h3>
@@ -461,7 +461,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             )}
           </div>
 
-          <div className="space-y-4 text-sm">
+          <div className="space-y-0.5 text-xs">
             {columns.map((col) => (
               <div key={col.id} className="grid grid-cols-3 gap-4 items-center">
                 <span className="text-gray-500 font-medium">{col.name}</span>
