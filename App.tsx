@@ -115,7 +115,7 @@ const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] =>
   return todayTable ? [todayTable, ...otherTables] : tables;
 };
 
-const initialTables: TableDefinition[] = [
+const initialTablesUnsorted: TableDefinition[] = [
   {
     id: 'table-1',
     name: '고객 목록',
@@ -160,6 +160,9 @@ const initialTables: TableDefinition[] = [
     rows: [],
   },
 ];
+
+// TODAY 테이블이 항상 첫 번째가 되도록 정렬
+const initialTables = sortTablesByTodayFirst(initialTablesUnsorted);
 
 export default function App() {
   const [bookmarks, setBookmarks] = useState<BookmarkGroup[]>([]);
