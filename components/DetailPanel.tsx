@@ -253,14 +253,15 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
                       <div className="flex-1 min-w-0">
                         {editingChecklistId === item.id ? (
-                            <input
+                            <textarea
                                 autoFocus
-                                type="text"
-                                className="w-full text-xs border-b border-blue-400 outline-none pb-0.5"
+                                className="w-full text-xs border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap"
+                                rows={2}
                                 defaultValue={item.text}
                                 onBlur={(e) => updateChecklistText(item.id, e.target.value)}
                                 onKeyDown={(e) => {
-                                    if(e.key === 'Enter') {
+                                    if (e.key === 'Enter' && e.ctrlKey) {
+                                        e.preventDefault();
                                         updateChecklistText(item.id, e.currentTarget.value);
                                     }
                                 }}
@@ -588,17 +589,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                     </button>
                     <div className="flex-1 min-w-0">
                       {editingChecklistId === item.id ? (
-                        <input
+                        <textarea
                           autoFocus
-                          type="text"
-                          className="w-full px-2 py-1 border border-green-500 rounded text-sm focus:outline-none bg-white"
+                          className="w-full px-2 py-1 border border-green-500 rounded text-sm focus:outline-none bg-white resize-none whitespace-pre-wrap"
+                          rows={3}
                           defaultValue={item.text}
                           onBlur={(e) => {
                             updateChecklistText(item.id, e.target.value);
                             setEditingChecklistId(null);
                           }}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && e.ctrlKey) {
+                              e.preventDefault();
                               updateChecklistText(item.id, e.currentTarget.value);
                               setEditingChecklistId(null);
                             }
