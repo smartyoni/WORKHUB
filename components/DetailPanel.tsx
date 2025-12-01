@@ -162,8 +162,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
           {/* Category */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-500 uppercase">카테고리</label>
-
             {categoryInputType === 'dropdown' ? (
                 <select
                   value={localRow._category || categories[0]?.name || ''}
@@ -398,8 +396,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         
         {/* Category */}
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-500">카테고리</label>
-          
           {categoryInputType === 'dropdown' ? (
               <select
                 value={localRow._category || categories[0]?.name || ''}
