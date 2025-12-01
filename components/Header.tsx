@@ -244,7 +244,7 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                 zIndex: 999999
               }}
             >
-            <div className="p-4 flex gap-4">
+              <div className="p-4 flex gap-4">
               {/* 왼쪽 컬럼: 이름, URL, 영역 */}
               <div className="flex-1 space-y-4">
                 {/* 이름 */}
@@ -387,8 +387,9 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                   저장
                 </button>
               </div>
+              </div>
             </div>
-        </>
+            </>
         );
       })()}
 

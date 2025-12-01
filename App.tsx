@@ -1378,6 +1378,124 @@ export default function App() {
             {/* Desktop version modal */}
           </div>
         )}
+
+        {/* Add Column Modal */}
+        {isAddColumnModalOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-[450px] mx-4 animate-in zoom-in duration-200">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-gray-800">새로운 컬럼 추가</h2>
+                        <button onClick={() => setIsAddColumnModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">컬럼 이름</label>
+                            <input
+                                type="text"
+                                value={newColumnName}
+                                onChange={(e) => setNewColumnName(e.target.value)}
+                                placeholder="컬럼 이름을 입력하세요"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAddColumn();
+                                }}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">데이터 타입</label>
+                            <select
+                                value={newColumnType}
+                                onChange={(e) => setNewColumnType(e.target.value as ColumnType)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            >
+                                <option value={ColumnType.TEXT}>텍스트</option>
+                                <option value={ColumnType.NUMBER}>숫자</option>
+                                <option value={ColumnType.DATE_AUTO}>자동 날짜</option>
+                                <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
+                                <option value={ColumnType.TIME_AUTO}>자동 시간</option>
+                                <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-xl">
+                        <button
+                            onClick={() => setIsAddColumnModalOpen(false)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                        >
+                            취소
+                        </button>
+                        <button
+                            onClick={handleAddColumn}
+                            disabled={!newColumnName.trim()}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white rounded-lg transition-colors font-medium"
+                        >
+                            추가
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Row Input Modal */}
+        {isRowModalOpen && activeTable && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-[500px] mx-4 max-h-[90vh] flex flex-col animate-in zoom-in duration-200">
+                  <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                      <h2 className="text-xl font-bold text-gray-800">새 데이터 추가</h2>
+                      <button onClick={() => setIsRowModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                          <X className="w-5 h-5"/>
+                      </button>
+                  </div>
+
+                  <div className="p-6 overflow-y-auto space-y-5">
+                      {activeTable.columns.filter(c => !c.isHidden).map((col) => {
+                          const isAuto = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.TIME_AUTO;
+                          const isDate = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.DATE_MANUAL;
+                          const isTime = col.type === ColumnType.TIME_AUTO || col.type === ColumnType.TIME_MANUAL;
+                          const inputType = isDate ? 'date' : isTime ? 'time' : col.type === ColumnType.NUMBER ? 'number' : 'text';
+
+                          return (
+                              <div key={col.id}>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                      {col.name}
+                                      {isAuto && <span className="text-blue-500 text-xs ml-1 font-normal">(자동입력)</span>}
+                                  </label>
+                                  <input
+                                      type={inputType}
+                                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors ${
+                                          isAuto ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white border-gray-300'
+                                      }`}
+                                      value={rowFormData[col.id] || ''}
+                                      onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
+                                      disabled={isAuto}
+                                  />
+                              </div>
+                          );
+                      })}
+                  </div>
+
+                  <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-xl">
+                      <button
+                          onClick={() => setIsRowModalOpen(false)}
+                          className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                      >
+                          취소
+                      </button>
+                      <button
+                          onClick={saveNewRow}
+                          className="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                          <Save className="w-4 h-4" /> 저장
+                      </button>
+                  </div>
+              </div>
+            </div>
+        )}
       </div>
     );
   }
