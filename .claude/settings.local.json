@@ -16,7 +16,10 @@
       "Bash(dir \"C:\\Users\\User\\Desktop\\앱개발\\workhub\\components\")",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(del \"c:\\Users\\User\\Downloads\\화면 캡처 2025-11-29 145707.png\")",
+      "Bash(tasklist:*)",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force\")"
     ],
     "deny": [],
     "ask": []

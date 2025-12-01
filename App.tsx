@@ -1306,7 +1306,7 @@ export default function App() {
           <div className="w-full overflow-x-auto overflow-y-auto flex-1">
             {activeTable && (
               <table className="w-full border-collapse bg-white">
-                <thead className="sticky top-0 z-20 bg-purple-600 text-white shadow-md">
+                <thead className="sticky top-0 z-10 bg-purple-600 text-white shadow-md">
                   <tr>
                     {visibleColumns.map(col => (
                       <th
@@ -1572,7 +1572,7 @@ export default function App() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
                 <div className="overflow-x-auto overflow-y-auto flex-1">
                     <table className="w-full text-sm text-left whitespace-nowrap border-collapse">
-                        <thead className="bg-purple-700 text-white sticky top-0 z-20 shadow-md">
+                        <thead className="bg-purple-700 text-white sticky top-0 z-10 shadow-md">
                             <tr>
                                 {visibleColumns.map(col => (
                                     <th
@@ -1614,8 +1614,8 @@ export default function App() {
                                             </div>
                                         </div>
                                         {/* Resize Handle */}
-                                        <div 
-                                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-purple-400 z-20 transition-colors"
+                                        <div
+                                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-purple-400 z-10 transition-colors"
                                             onMouseDown={(e) => handleResizeStart(e, col.id, col.width)}
                                         />
                                     </th>

@@ -3,6 +3,22 @@ import React, { useState } from 'react';
 import { Bookmark, BookmarkGroup } from '../types';
 import { Plus, X, Clipboard } from 'lucide-react';
 
+// 배경색의 밝기에 따라 테두리 색상을 결정하는 함수
+const getBorderColor = (hexColor: string): string => {
+  if (!hexColor || hexColor === '#FFFFFF') return '#000000';
+
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+
+  // 밝기 계산 (YIQ 공식)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+  // 밝으면 검은색, 어두우면 흰색
+  return brightness > 128 ? '#000000' : '#FFFFFF';
+};
+
 interface HeaderProps {
   groups: BookmarkGroup[];
   setGroups: React.Dispatch<React.SetStateAction<BookmarkGroup[]>>;
@@ -130,10 +146,10 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
               {group.items.slice(0, 12).map((item) => (
                 <div
                   key={item.id}
-                  className={`relative group rounded-lg text-xs font-medium cursor-pointer flex items-center justify-center text-center transition-all shadow-sm border-2 hover:shadow-md select-none opacity-100`}
+                  className={`relative group rounded-lg text-xs font-medium cursor-pointer flex items-center justify-center text-center transition-all shadow-sm border hover:shadow-md select-none opacity-100`}
                   style={{
                     backgroundColor: item.color || '#FFFFFF',
-                    borderColor: item.color ? `${item.color}` : '#9CA3AF',
+                    borderColor: getBorderColor(item.color || '#FFFFFF'),
                     color: '#1F2937',
                     maxHeight: '90%'
                   }}
@@ -194,73 +210,94 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
       })}
 
       {/* Right-click Context Menu */}
-      {contextMenu && contextMenuEdit && (
-        <>
-          <div
-            className="fixed inset-0"
-            onClick={() => {
-              setContextMenu(null);
-              setContextMenuEdit(null);
-            }}
-          />
-          <div
-            className="fixed bg-white rounded-lg shadow-xl border border-gray-200 z-50 w-80 animate-in fade-in zoom-in duration-150 overflow-y-auto max-h-[80vh]"
-            style={{
-              left: `${contextMenu.x}px`,
-              top: `${contextMenu.y}px`,
-            }}
-          >
-            <div className="p-4 space-y-4">
-              {/* 이름 */}
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">이름</label>
-                <input
-                  type="text"
-                  value={contextMenuEdit.name}
-                  onChange={(e) => setContextMenuEdit({ ...contextMenuEdit, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
+      {contextMenu && contextMenuEdit && (() => {
+        const menuWidth = 560; // w-[560px]
+        const menuHeight = 350; // 대략적인 높이
+        let left = contextMenu.x;
+        let top = contextMenu.y;
+
+        // 오른쪽 경계 초과 시 왼쪽 정렬
+        if (left + menuWidth > window.innerWidth) {
+          left = Math.max(0, window.innerWidth - menuWidth - 16);
+        }
+
+        // 아래쪽 경계 초과 시 위쪽 정렬
+        if (top + menuHeight > window.innerHeight) {
+          top = Math.max(0, window.innerHeight - menuHeight - 16);
+        }
+
+        return (
+          <>
+            <div
+              className="fixed inset-0"
+              onClick={() => {
+                setContextMenu(null);
+                setContextMenuEdit(null);
+              }}
+              style={{ zIndex: 999998 }}
+            />
+            <div
+              className="fixed bg-white rounded-lg shadow-xl border border-gray-200 w-[560px] animate-in fade-in zoom-in duration-150 overflow-y-auto max-h-[80vh]"
+              style={{
+                left: `${left}px`,
+                top: `${top}px`,
+                zIndex: 999999
+              }}
+            >
+            <div className="p-4 flex gap-4">
+              {/* 왼쪽 컬럼: 이름, URL, 영역 */}
+              <div className="flex-1 space-y-4">
+                {/* 이름 */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">이름</label>
+                  <input
+                    type="text"
+                    value={contextMenuEdit.name}
+                    onChange={(e) => setContextMenuEdit({ ...contextMenuEdit, name: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                {/* URL */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">URL</label>
+                  <input
+                    type="text"
+                    value={contextMenuEdit.url}
+                    onChange={(e) => setContextMenuEdit({ ...contextMenuEdit, url: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                {/* 영역(그룹 선택) */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">영역</label>
+                  <select
+                    value={contextMenuEdit.groupId}
+                    onChange={(e) => {
+                      const newGroupId = e.target.value;
+                      setContextMenuEdit({ ...contextMenuEdit, groupId: newGroupId });
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* URL */}
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">URL</label>
-                <input
-                  type="text"
-                  value={contextMenuEdit.url}
-                  onChange={(e) => setContextMenuEdit({ ...contextMenuEdit, url: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
-              </div>
-
-              {/* 영역(그룹 선택) */}
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">영역</label>
-                <select
-                  value={contextMenuEdit.groupId}
-                  onChange={(e) => {
-                    const newGroupId = e.target.value;
-                    setContextMenuEdit({ ...contextMenuEdit, groupId: newGroupId });
-                  }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 색상 */}
-              <div>
+              {/* 중간 컬럼: 색상 */}
+              <div className="w-48">
                 <label className="text-xs font-semibold text-gray-500 block mb-2">색상</label>
-                <div className="flex gap-2 flex-wrap">
-                  {['#3B82F6', '#F97316', '#22C55E', '#EC4899', '#F472B6', '#FBBF24', '#86EFAC', '#FCD34D', '#FFFFFF'].map((color) => (
+                <div className="grid grid-cols-4 gap-2">
+                  {['#3B82F6', '#0EA5E9', '#06B6D4', '#14B8A6', '#22C55E', '#84CC16', '#FBBF24', '#F97316', '#EF4444', '#F43F5E', '#EC4899', '#D946EF', '#A855F7', '#7C3AED', '#6366F1', '#FFFFFF'].map((color) => (
                     <button
                       key={color}
                       onClick={() => setContextMenuEdit({ ...contextMenuEdit, color })}
-                      className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                      className={`w-10 h-10 rounded-lg border-2 transition-all ${
                         contextMenuEdit.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-blue-500' : 'border-gray-300'
                       }`}
                       style={{ backgroundColor: color }}
@@ -270,8 +307,8 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                 </div>
               </div>
 
-              {/* 버튼 */}
-              <div className="flex gap-2 pt-2 justify-end border-t">
+              {/* 오른쪽 컬럼: 버튼들 (세로 배열) */}
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
                     setContextMenu(null);
@@ -351,9 +388,10 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                 </button>
               </div>
             </div>
-          </div>
+            </div>
         </>
-      )}
+        );
+      })()}
 
       {/* Bookmark Modal */}
       {editingBookmark && (
@@ -387,7 +425,7 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                 <div>
                     <label className="text-xs font-semibold text-gray-500 mb-2 block">색상</label>
                     <div className="flex gap-2 flex-wrap">
-                        {['#3B82F6', '#F97316', '#22C55E', '#EC4899', '#F472B6', '#FBBF24', '#86EFAC', '#FCD34D', '#FFFFFF'].map((color) => (
+                        {['#3B82F6', '#0EA5E9', '#06B6D4', '#14B8A6', '#22C55E', '#84CC16', '#FBBF24', '#F97316', '#EF4444', '#F43F5E', '#EC4899', '#D946EF', '#A855F7', '#7C3AED', '#6366F1', '#FFFFFF'].map((color) => (
                             <button
                                 key={color}
                                 onClick={() => setTempColor(color)}
