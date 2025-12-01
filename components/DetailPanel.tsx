@@ -214,13 +214,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </h3>
 
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="체크리스트 추가"
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-green-500"
+              <textarea
+                placeholder="항목 추가 (Ctrl+Enter로 추가)"
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-green-500 resize-none"
+                rows={2}
                 value={newChecklistText}
                 onChange={(e) => setNewChecklistText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addChecklist()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    addChecklist();
+                  }
+                }}
               />
               <button
                 onClick={addChecklist}
@@ -262,7 +267,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                             />
                         ) : (
                             <span
-                                className={`text-xs cursor-pointer select-none block ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                                className={`text-xs cursor-pointer select-none block whitespace-pre-wrap break-words ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
                                 onDoubleClick={() => setEditingChecklistId(item.id)}
                             >
                                 {item.text}
@@ -544,13 +549,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
           {/* Add Checklist Input */}
           <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="새로운 항목 추가..."
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-green-500"
+            <textarea
+              placeholder="새로운 항목 추가... (Ctrl+Enter로 추가, Shift+Enter로 줄바꿈)"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
+              rows={3}
               value={newChecklistText}
               onChange={(e) => setNewChecklistText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addChecklist()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  e.preventDefault();
+                  addChecklist();
+                }
+              }}
             />
             <button
               onClick={addChecklist}
@@ -597,7 +607,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       ) : (
                         <span
                           onDoubleClick={() => setEditingChecklistId(item.id)}
-                          className={`cursor-pointer hover:bg-white p-1 rounded block ${
+                          className={`cursor-pointer hover:bg-white p-1 rounded block whitespace-pre-wrap break-words ${
                             item.isChecked ? 'text-gray-400 line-through' : 'text-gray-700'
                           }`}
                         >
