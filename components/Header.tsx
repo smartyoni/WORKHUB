@@ -388,7 +388,6 @@ const Header: React.FC<HeaderProps> = ({ groups, setGroups, setIsConfirmModalOpe
                 </button>
               </div>
             </div>
-            </div>
         </>
         );
       })()}
