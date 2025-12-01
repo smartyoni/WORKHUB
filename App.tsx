@@ -106,6 +106,15 @@ const initialCategories: AppCategory[] = [
     { id: 'cat-4', name: '완료됨' },
 ];
 
+// --- CONSTANTS ---
+const TODAY_TABLE_ID = 'table-2';
+
+const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] => {
+  const todayTable = tables.find(t => t.id === TODAY_TABLE_ID);
+  const otherTables = tables.filter(t => t.id !== TODAY_TABLE_ID);
+  return todayTable ? [todayTable, ...otherTables] : tables;
+};
+
 const initialTables: TableDefinition[] = [
   {
     id: 'table-1',
@@ -158,7 +167,11 @@ export default function App() {
   const [categories, setCategories] = useState<AppCategory[]>([]);
   const [customFilters, setCustomFilters] = useState<CustomFilter[]>([]);
   const [isDBLoaded, setIsDBLoaded] = useState(false);
-  const [activeTableId, setActiveTableId] = useState<string>('table-1');
+  const [activeTableId, setActiveTableId] = useState<string>(() => {
+    // localStorage에서 이전 선택 테이블 복원, 없으면 TODAY 테이블
+    const saved = localStorage.getItem('activeTableId');
+    return saved || TODAY_TABLE_ID;
+  });
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   
   // Modals state
@@ -303,8 +316,16 @@ export default function App() {
 
         // 데이터 설정
         const migratedTables = firebaseData.tables.length > 0 ? migrateTableData(firebaseData.tables) : initialTables;
+        const sortedTables = sortTablesByTodayFirst(migratedTables);
         const migratedBookmarks = firebaseData.bookmarks.length > 0 ? migrateBookmarks(firebaseData.bookmarks) : initialBookmarkGroups;
-        setTables(migratedTables);
+        setTables(sortedTables);
+
+        // 저장된 테이블 ID가 현재 테이블 목록에 없으면 TODAY 테이블로 설정
+        const savedTableId = localStorage.getItem('activeTableId');
+        if (savedTableId && !sortedTables.find(t => t.id === savedTableId)) {
+          setActiveTableId(TODAY_TABLE_ID);
+          localStorage.setItem('activeTableId', TODAY_TABLE_ID);
+        }
         setBookmarks(migratedBookmarks);
         setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
         setCustomFilters(firebaseData.filters || []);
@@ -317,10 +338,19 @@ export default function App() {
       } catch (error) {
         console.error('Failed to load data from Firebase:', error);
         // 최종 폴백: 초기값 사용
-        setTables(initialTables);
+        const sortedInitialTables = sortTablesByTodayFirst(initialTables);
+        setTables(sortedInitialTables);
         setBookmarks(initialBookmarkGroups);
         setCategories(initialCategories);
         setCustomFilters([]);
+
+        // 저장된 테이블 ID가 초기 테이블 목록에 없으면 TODAY 테이블로 설정
+        const savedTableId = localStorage.getItem('activeTableId');
+        if (savedTableId && !sortedInitialTables.find(t => t.id === savedTableId)) {
+          setActiveTableId(TODAY_TABLE_ID);
+          localStorage.setItem('activeTableId', TODAY_TABLE_ID);
+        }
+
         setDataSource('initial');
         setIsDBLoaded(true);
       }
@@ -339,10 +369,11 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Reset lock and filter when table changes
+  // Reset lock and filter when table changes, and save activeTableId to localStorage
   useEffect(() => {
     setIsDeleteLocked(true);
     setActiveFilterId(null);
+    localStorage.setItem('activeTableId', activeTableId);
   }, [activeTableId]);
 
   // --- MOBILE TOUCH HANDLERS ---
@@ -736,11 +767,16 @@ export default function App() {
   };
 
   const handleMoveTable = (tableId: string, direction: 'left' | 'right') => {
+      // TODAY 테이블은 이동 불가
+      if (tableId === TODAY_TABLE_ID) return;
+
       const currentIndex = tables.findIndex(t => t.id === tableId);
       if (currentIndex === -1) return;
 
       const newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
-      if (newIndex < 0 || newIndex >= tables.length) return;
+
+      // TODAY 테이블이 첫 번째이므로, newIndex가 0(TODAY) 또는 범위 밖이면 반환
+      if (newIndex < 1 || newIndex >= tables.length) return;
 
       const newTables = [...tables];
       [newTables[currentIndex], newTables[newIndex]] = [newTables[newIndex], newTables[currentIndex]];
@@ -864,7 +900,9 @@ export default function App() {
       columns: newTableColumns.map((c, idx) => ({ ...c, id: `col-${Date.now()}-${idx}` })),
       rows: []
     };
-    setTables([...tables, newTable]);
+    // TODAY 테이블이 항상 첫 번째가 되도록 정렬 유지
+    const sortedTables = sortTablesByTodayFirst([...tables, newTable]);
+    setTables(sortedTables);
     setActiveTableId(newTable.id);
     setIsTableModalOpen(false);
     setNewTableName('');
@@ -877,11 +915,17 @@ export default function App() {
         return;
     }
 
+    // TODAY 테이블은 삭제 불가
+    if (activeTable.id === TODAY_TABLE_ID) {
+        alert("'오늘 기록' 테이블은 고정되어 있어 삭제할 수 없습니다.");
+        return;
+    }
+
     if (isDeleteLocked) {
         alert("⚠️ 테이블 삭제가 잠겨있습니다.\n테이블 이름 옆 자물쇠 버튼을 눌러 잠금을 해제해주세요.");
         return;
     }
-    
+
     if (tables.length <= 1) {
         alert("최소 하나의 테이블은 유지해야 합니다. 다른 테이블을 추가한 후 삭제해주세요.");
         return;
