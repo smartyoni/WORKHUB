@@ -33,6 +33,7 @@ export interface RowData {
   id: string;
   [key: string]: any; // Dynamic column data
   _memo: string;
+  _category?: string; // Optional - for backward compatibility with existing data
   _checklists: ChecklistItem[];
 }
 
