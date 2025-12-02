@@ -248,6 +248,10 @@ export default function App() {
   // 데이터 소스 구분: 초기값과 실제 로드된 데이터를 구분하여 자동 저장 안전화
   const [dataSource, setDataSource] = useState<'initial' | 'loaded'>('initial');
 
+  // --- TABLE RENAME STATE ---
+  const [isEditingTableName, setIsEditingTableName] = useState(false);
+  const [editingTableName, setEditingTableName] = useState('');
+
   // --- CUSTOM CONFIRM MODAL STATE ---
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmModalMessage, setConfirmModalMessage] = useState('');
@@ -945,6 +949,35 @@ export default function App() {
     setIsConfirmModalOpen(true); // Open custom confirmation modal
   };
 
+  // 테이블 이름 더블클릭으로 수정
+  const handleTableNameDoubleClick = () => {
+    if (!activeTable) return;
+    setEditingTableName(activeTable.name);
+    setIsEditingTableName(true);
+  };
+
+  const saveTableName = () => {
+    if (!editingTableName.trim()) {
+      setIsEditingTableName(false);
+      return;
+    }
+
+    const updatedTables = tables.map(table =>
+      table.id === activeTable?.id
+        ? { ...table, name: editingTableName.trim() }
+        : table
+    );
+
+    setTables(updatedTables);
+    setIsEditingTableName(false);
+    setEditingTableName('');
+  };
+
+  const cancelTableNameEdit = () => {
+    setIsEditingTableName(false);
+    setEditingTableName('');
+  };
+
   // Prepare and open the Row Input Modal
   const openRowModal = () => {
     if (!activeTable) return;
@@ -1626,7 +1659,28 @@ export default function App() {
           {/* Table Toolbar */}
           <div className="px-6 py-4 flex justify-between items-center">
              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-800">{activeTable?.name}</h1>
+                {isEditingTableName ? (
+                  <input
+                    type="text"
+                    value={editingTableName}
+                    onChange={(e) => setEditingTableName(e.target.value)}
+                    onBlur={saveTableName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveTableName();
+                      if (e.key === 'Escape') cancelTableNameEdit();
+                    }}
+                    autoFocus
+                    className="text-2xl font-bold text-gray-800 border-2 border-blue-500 rounded px-2 py-1 focus:outline-none"
+                  />
+                ) : (
+                  <h1
+                    className="text-2xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200 rounded px-2 py-1 transition-colors"
+                    onDoubleClick={handleTableNameDoubleClick}
+                    title="더블클릭으로 이름 변경"
+                  >
+                    {activeTable?.name}
+                  </h1>
+                )}
                 
                 <div className="flex items-center bg-white rounded-lg border border-gray-200 p-0.5 shadow-sm">
                   <button
