@@ -33,7 +33,6 @@ export interface RowData {
   id: string;
   [key: string]: any; // Dynamic column data
   _memo: string;
-  _category: string;
   _checklists: ChecklistItem[];
 }
 
@@ -59,15 +58,9 @@ export interface BookmarkGroup {
   items: Bookmark[];
 }
 
-export interface AppCategory {
-  id: string;
-  tableId: string;
-  name: string;
-}
-
 // --- Filter Types ---
 
-export type FilterTargetType = 'column' | 'category' | 'memo' | 'checklist' | 'reply';
+export type FilterTargetType = 'column' | 'memo' | 'checklist' | 'reply';
 
 export interface FilterTarget {
   type: FilterTargetType;

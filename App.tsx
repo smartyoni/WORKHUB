@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
-import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, AppCategory, ValidationResult, parseCSV, validateCSVData } from './types';
-import { initDB as initFirebaseDB, saveBookmarks, saveCategories, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase } from './firebase';
+import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, ValidationResult, parseCSV, validateCSVData } from './types';
+import { initDB as initFirebaseDB, saveBookmarks, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase } from './firebase';
 import {
   Plus,
   Search,
@@ -99,20 +99,6 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   },
 ];
 
-// 테이블별 초기 카테고리 생성 함수 (table-1 '고객 목록'만 카테고리 생성)
-const createInitialCategories = (tableId: string): AppCategory[] => {
-    // table-1 ('고객 목록')만 카테고리를 생성, 다른 테이블은 카테고리 없음
-    if (tableId !== 'table-1') return [];
-
-    return [
-        { id: `cat-${tableId}-unset`, tableId, name: '미설정' },
-        { id: `cat-${tableId}-1`, tableId, name: '기본 프로젝트' },
-        { id: `cat-${tableId}-2`, tableId, name: '긴급 요청' },
-        { id: `cat-${tableId}-3`, tableId, name: '보류 상태' },
-        { id: `cat-${tableId}-4`, tableId, name: '완료됨' },
-    ];
-};
-
 // --- CONSTANTS ---
 const TODAY_TABLE_NAME = '오늘 기록';
 
@@ -128,39 +114,6 @@ const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] =>
 
 const initialTablesUnsorted: TableDefinition[] = [
   {
-    id: 'table-1',
-    name: '고객 목록',
-    columns: [
-      { id: 'col-1', name: '접수일', type: ColumnType.DATE_AUTO, width: 120 },
-      { id: 'col-2', name: '고객명', type: ColumnType.TEXT, width: 150 },
-      { id: 'col-3', name: '연락처', type: ColumnType.TEXT, width: 150 },
-      { id: 'col-4', name: '활동내용', type: ColumnType.TEXT, width: 300 },
-    ],
-    rows: Array.from({ length: 15 }).map((_, i) => ({
-      id: `row-${i}`,
-      'col-1': `2024-11-${String(24 - i).padStart(2, '0')}`,
-      'col-2': i === 0 ? '내 사무실' : i === 1 ? '회계사 사무실' : `잠재 고객 ${i}`,
-      'col-3': `010-${1000 + i}-${2000 + i}`,
-      'col-4': i % 3 === 0 ? '-' : '문의 내용 기록됨',
-      _memo: i === 0 ? '중요한 고객입니다.\n내일 오후 2시 미팅 예정.' : '',
-      _category: '기본 프로젝트',
-      _checklists: [
-        {
-          id: 'cl-1',
-          text: '계약서 초안 작성',
-          isChecked: false,
-          replies: [],
-        },
-        {
-          id: 'cl-2',
-          text: '보증금 입금 확인',
-          isChecked: true,
-          replies: [{ id: 'r1', text: '입금 확인됨', createdAt: '2024.11.20' }],
-        }
-      ],
-    })),
-  },
-  {
     id: 'table-2',
     name: '오늘 기록',
     columns: [
@@ -174,7 +127,6 @@ const initialTablesUnsorted: TableDefinition[] = [
       'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
       'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
       _memo: '',
-      _category: '',
       _checklists: [],
     })),
   },
@@ -186,7 +138,6 @@ const initialTables = sortTablesByTodayFirst(initialTablesUnsorted);
 export default function App() {
   const [bookmarks, setBookmarks] = useState<BookmarkGroup[]>([]);
   const [tables, setTables] = useState<TableDefinition[]>([]);
-  const [categories, setCategories] = useState<AppCategory[]>([]);
   const [customFilters, setCustomFilters] = useState<CustomFilter[]>([]);
   const [isDBLoaded, setIsDBLoaded] = useState(false);
   const [todayTableId, setTodayTableId] = useState<string | null>(null);
@@ -201,11 +152,6 @@ export default function App() {
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
   const [isHiddenColModalOpen, setIsHiddenColModalOpen] = useState(false);
-  
-  // Category Settings State
-  const [isCategorySettingsModalOpen, setIsCategorySettingsModalOpen] = useState(false);
-  const [categoryInputType, setCategoryInputType] = useState<'dropdown' | 'buttons'>('dropdown');
-  const [newCategoryName, setNewCategoryName] = useState('');
 
   // New Table Form State
   const [newTableName, setNewTableName] = useState('');
@@ -237,7 +183,6 @@ export default function App() {
   // --- FILTER STATE ---
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
 
   // --- TODAY TABLE DATE FILTER STATE ---
   const [activeDateFilter, setActiveDateFilter] = useState<string | null>(null);
@@ -299,31 +244,6 @@ export default function App() {
   // Get Filters for current table
   const currentTableFilters = customFilters.filter(f => f.tableId === activeTableId);
 
-  // Get Categories for current table
-  const currentTableCategories = categories.filter(c => c.tableId === activeTableId);
-
-  // Get used categories (categories that are actually set on rows, excluding '미설정')
-  const usedCategories = useMemo(() => {
-    if (!activeTable) return [];
-    const usedCatNames = new Set(
-      activeTable.rows
-        .map(row => row._category)
-        .filter((cat): cat is string => !!cat && cat.trim() !== '' && cat !== '미설정')
-    );
-    return currentTableCategories.filter(cat => usedCatNames.has(cat.name) && cat.name !== '미설정');
-  }, [activeTable, currentTableCategories]);
-
-  // Get count of rows for each used category
-  const getCategoryCount = (categoryName: string): number => {
-    return activeTable?.rows.filter(row => row._category === categoryName).length || 0;
-  };
-
-  // Get count of unset category rows
-  const getUnsetCategoryCount = (): number => {
-    if (!activeTable) return 0;
-    return activeTable.rows.filter(row => row._category === '미설정').length;
-  };
-
   // --- TODAY TABLE DATE HELPERS ---
   const getTodayTableDates = (): { date: string; displayDate: string; count: number }[] => {
     // === DEBUG: getTodayTableDates called ===
@@ -376,7 +296,6 @@ export default function App() {
             ...table,
             rows: table.rows.map(row => ({
               ...row,
-              _category: row._category || '미설정',
               _checklists: row._checklists || []
             }))
           }));
@@ -501,7 +420,6 @@ export default function App() {
   useEffect(() => {
     setIsDeleteLocked(true);
     setActiveFilterId(null);
-    setActiveCategoryFilter(null);
     localStorage.setItem('activeTableId', activeTableId);
   }, [activeTableId]);
 
@@ -556,21 +474,6 @@ export default function App() {
     const value = String(row[condition.target.field || ''] || '').toLowerCase();
     const condValue = condition.value.toLowerCase();
     return evaluateOperator(value, condition.operator, condValue);
-  };
-
-  const evaluateCategoryFilter = (row: RowData, condition: FilterCondition): boolean => {
-    const category = row._category || '';
-
-    switch (condition.operator) {
-      case 'equals':
-        return category === condition.value;
-      case 'isEmpty':
-        return category === '';
-      case 'isNotEmpty':
-        return category !== '';
-      default:
-        return true;
-    }
   };
 
   const evaluateMemoFilter = (row: RowData, condition: FilterCondition): boolean => {
@@ -676,8 +579,6 @@ export default function App() {
                       switch (migratedCondition.target.type) {
                           case 'column':
                               return evaluateColumnFilter(row, migratedCondition);
-                          case 'category':
-                              return evaluateCategoryFilter(row, migratedCondition);
                           case 'memo':
                               return evaluateMemoFilter(row, migratedCondition);
                           case 'checklist':
@@ -692,11 +593,6 @@ export default function App() {
           }
       }
 
-      // Apply category filter second (for non-TODAY tables)
-      if (activeCategoryFilter && activeTableId !== todayTableId) {
-          rows = rows.filter(row => row._category === activeCategoryFilter);
-      }
-
       // Apply date filter for TODAY table
       if (activeDateFilter && activeTableId === todayTableId) {
           rows = rows.filter(row => row['col-1'] === activeDateFilter);
@@ -705,7 +601,7 @@ export default function App() {
       return rows;
   };
 
-  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeCategoryFilter, activeDateFilter, activeTableId]);
+  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeDateFilter, activeTableId]);
 
   // --- AUTO SAVE TO FIREBASE ---
   // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
@@ -723,13 +619,6 @@ export default function App() {
       saveBookmarks(bookmarks).catch(error => console.error('Failed to save bookmarks to Firebase:', error));
     }
   }, [bookmarks, isDBLoaded, dataSource]);
-
-  // Save categories to Firebase whenever they change
-  useEffect(() => {
-    if (isDBLoaded && categories.length > 0 && dataSource === 'loaded') {
-      saveCategories(categories).catch(error => console.error('Failed to save categories to Firebase:', error));
-    }
-  }, [categories, isDBLoaded, dataSource]);
 
   // Save filters to Firebase whenever they change
   useEffect(() => {
@@ -790,13 +679,6 @@ export default function App() {
           { value: 'lessThan', label: '작다 (<)' }
         ];
 
-      case 'category':
-        return [
-          { value: 'equals', label: '선택됨' },
-          { value: 'isEmpty', label: '비어있음' },
-          { value: 'isNotEmpty', label: '선택됨' }
-        ];
-
       case 'memo':
         return [
           { value: 'contains', label: '포함' },
@@ -837,8 +719,6 @@ export default function App() {
 
   const getPlaceholder = (type: FilterTargetType, operator: FilterOperator): string => {
     switch (type) {
-      case 'category':
-        return '카테고리 선택...';
       case 'memo':
         return '메모 검색...';
       case 'checklist':
@@ -849,44 +729,6 @@ export default function App() {
         return '값 입력...';
     }
   };
-
-  // --- CATEGORY LOGIC ---
-  const handleAddCategory = () => {
-      if(!newCategoryName.trim() || !activeTable) return;
-      setCategories([...categories, {
-        id: `${activeTableId}-${Date.now()}`,
-        tableId: activeTableId,
-        name: newCategoryName.trim()
-      }]);
-      setNewCategoryName('');
-  };
-
-  const handleRemoveCategory = (catId: string) => {
-      // 현재 테이블의 카테고리 개수 확인
-      if(currentTableCategories.length <= 1) {
-          alert("최소 하나의 카테고리는 존재해야 합니다.");
-          return;
-      }
-      const categoryToRemove = categories.find(c => c.id === catId);
-      // 같은 테이블의 다른 카테고리 찾기
-      const defaultCategory = currentTableCategories.find(c => c.id !== catId);
-
-      setCategories(prev => prev.filter(c => c.id !== catId));
-
-      // 현재 테이블의 행들만 업데이트
-      if (categoryToRemove && defaultCategory && activeTable) {
-          setTables(prevTables => prevTables.map(table => {
-              if (table.id !== activeTableId) return table;
-              return {
-                  ...table,
-                  rows: table.rows.map(row =>
-                      row._category === categoryToRemove.name ? { ...row, _category: defaultCategory.name } : row
-                  )
-              };
-          }));
-      }
-  };
-
 
   // --- ACTIONS ---
 
@@ -1165,13 +1007,10 @@ export default function App() {
     if (!activeTable) return;
 
     const newRowId = `row-${Date.now()}`;
-    // "미설정" 카테고리를 기본값으로 사용
-    const unsetCategory = currentTableCategories.find(cat => cat.name === '미설정');
     const newRow: RowData = {
         id: newRowId,
         ...rowFormData,
         _memo: '',
-        _category: unsetCategory?.name || '미설정',
         _checklists: []
     };
 
@@ -1243,19 +1082,15 @@ export default function App() {
     }
 
     const timestamp = Date.now();
-    // "미설정" 카테고리를 기본값으로 사용
-    const unsetCategory = currentTableCategories.find(cat => cat.name === '미설정');
     const newRows: RowData[] = csvValidationResult.validatedRows.map((validatedData, index) => {
       // Extract special columns if present in validated data
       const memoValue = validatedData._memo || '';
-      const categoryValue = validatedData._category || unsetCategory?.name || '미설정';
 
       // Create row with validated column data
       const newRow: RowData = {
         id: `row-csv-${timestamp}-${index}`,
         ...validatedData,
         _memo: memoValue,
-        _category: categoryValue,
         _checklists: []
       };
 
@@ -1610,8 +1445,6 @@ export default function App() {
                     setIsDetailPanelModal(false);
                     setSelectedRowId(null);
                   }}
-                  categories={currentTableCategories}
-                  categoryInputType={categoryInputType}
                   setIsConfirmModalOpen={setIsConfirmModalOpen}
                   setConfirmModalMessage={setConfirmModalMessage}
                   setConfirmModalAction={setConfirmModalAction}
@@ -1772,15 +1605,6 @@ export default function App() {
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0">
           <div className="p-4 flex items-center justify-between">
             <h2 className="font-bold text-gray-800">필터</h2>
-            {activeTableId === 'table-1' && (
-            <button
-                onClick={() => setIsCategorySettingsModalOpen(true)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition-colors"
-                title="설정 (카테고리 관리)"
-            >
-                <Settings className="w-4 h-4"/>
-            </button>
-            )}
           </div>
           
           <div className="flex-1 overflow-y-auto px-2 space-y-1">
@@ -1788,15 +1612,14 @@ export default function App() {
                 icon={LayoutGrid}
                 label="전체"
                 count={activeTable?.rows.length || 0}
-                active={activeCategoryFilter === null && activeDateFilter === null}
+                active={activeDateFilter === null}
                 onClick={() => {
-                  setActiveCategoryFilter(null);
                   setActiveDateFilter(null);
                 }}
             />
 
             {/* TODAY Table: Date List */}
-            {activeTableId === todayTableId ? (
+            {activeTableId === todayTableId && (
               <>
                 {/* Date List */}
                 {(() => {
@@ -1824,40 +1647,6 @@ export default function App() {
                     </>
                   );
                 })()}
-              </>
-            ) : (
-              <>
-                {/* Category-based sidebar for table-1 only */}
-                {activeTableId === 'table-1' && (
-                <>
-                  <SideMenuItem
-                    icon={Inbox}
-                    label="미설정"
-                    count={getUnsetCategoryCount()}
-                    active={activeCategoryFilter === '미설정'}
-                    onClick={() => setActiveCategoryFilter('미설정')}
-                  />
-
-                  {/* Used Categories Section */}
-                  {usedCategories.length > 0 && (
-                    <>
-                      <div className="mt-4 pt-2 border-t border-gray-100">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">카테고리</h3>
-                      </div>
-                      {usedCategories.map(category => (
-                        <SideMenuItem
-                          key={category.id}
-                          icon={ListFilter}
-                          label={category.name}
-                          count={getCategoryCount(category.name)}
-                          active={activeCategoryFilter === category.name}
-                          onClick={() => setActiveCategoryFilter(category.name)}
-                        />
-                      ))}
-                    </>
-                  )}
-                </>
-                )}
               </>
             )}
           </div>
@@ -2073,8 +1862,6 @@ export default function App() {
             onClose={() => setSelectedRowId(null)}
             onUpdate={updateRow}
             onDeleteRow={handleDeleteRow}
-            categories={currentTableCategories}
-            categoryInputType={categoryInputType}
             setIsConfirmModalOpen={setIsConfirmModalOpen}
             setConfirmModalMessage={setConfirmModalMessage}
             setConfirmModalAction={setConfirmModalAction}
@@ -2154,104 +1941,6 @@ export default function App() {
             </span>
          )}
       </footer>
-
-      {/* Category Settings Modal */}
-      {isCategorySettingsModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl w-[500px] animate-in zoom-in duration-200">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800">설정</h2>
-                    <button onClick={() => setIsCategorySettingsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                        <X className="w-5 h-5"/>
-                    </button>
-                </div>
-                
-                <div className="p-6 space-y-8">
-                    {/* Input Method Selection */}
-                    <div>
-                        <h3 className="text-sm font-bold text-gray-700 mb-3">상세 패널 카테고리 입력 방식</h3>
-                        <div className="flex gap-4">
-                            <label className={`flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-all ${categoryInputType === 'dropdown' ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                                <input 
-                                    type="radio" 
-                                    name="catInputType" 
-                                    checked={categoryInputType === 'dropdown'}
-                                    onChange={() => setCategoryInputType('dropdown')}
-                                    className="hidden"
-                                />
-                                {categoryInputType === 'dropdown' ? <CheckCircle2 className="w-5 h-5 text-purple-600" /> : <Circle className="w-5 h-5 text-gray-300" />}
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-gray-800">드롭다운 (Dropdown)</span>
-                                    <span className="text-xs text-gray-500">목록에서 하나를 선택합니다.</span>
-                                </div>
-                            </label>
-
-                            <label className={`flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-all ${categoryInputType === 'buttons' ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-200' : 'border-gray-200 hover:bg-gray-50'}`}>
-                                <input 
-                                    type="radio" 
-                                    name="catInputType" 
-                                    checked={categoryInputType === 'buttons'}
-                                    onChange={() => setCategoryInputType('buttons')}
-                                    className="hidden"
-                                />
-                                {categoryInputType === 'buttons' ? <CheckCircle2 className="w-5 h-5 text-purple-600" /> : <Circle className="w-5 h-5 text-gray-300" />}
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-gray-800">버튼식 (Buttons)</span>
-                                    <span className="text-xs text-gray-500">클릭하여 빠르게 선택합니다.</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="h-[1px] bg-gray-100"></div>
-
-                    {/* Category Management */}
-                    <div>
-                        <h3 className="text-sm font-bold text-gray-700 mb-3">카테고리 관리</h3>
-                        <div className="flex gap-2 mb-3">
-                            <input 
-                                type="text"
-                                placeholder="새 카테고리 이름"
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                            />
-                            <button 
-                                onClick={handleAddCategory}
-                                className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition-colors"
-                            >
-                                추가
-                            </button>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                            {currentTableCategories.map(cat => (
-                                <div key={cat.id} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full border border-gray-200 text-sm text-gray-700">
-                                    <span>{cat.name}</span>
-                                    <button
-                                        onClick={() => handleRemoveCategory(cat.id)}
-                                        className="text-gray-400 hover:text-red-500 p-0.5 rounded-full hover:bg-gray-200 transition-colors"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end rounded-b-xl">
-                    <button 
-                        onClick={() => setIsCategorySettingsModalOpen(false)}
-                        className="px-6 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
-                    >
-                        완료
-                    </button>
-                </div>
-            </div>
-          </div>
-      )}
 
 
       {/* Add Table Modal */}
@@ -2485,7 +2174,6 @@ export default function App() {
                                 }}
                               >
                                 <option value="column">컬럼</option>
-                                <option value="category">카테고리</option>
                                 <option value="memo">메모</option>
                                 <option value="checklist">체크리스트</option>
                                 <option value="reply">답글</option>
@@ -2537,22 +2225,7 @@ export default function App() {
                               </div>
 
                               {/* Third row: Value input (conditional) */}
-                              {showsValue && targetType === 'category' && cond.operator === 'equals' ? (
-                                <select
-                                  className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm"
-                                  value={cond.value}
-                                  onChange={(e) => {
-                                    const updated = [...newFilterConditions];
-                                    updated[idx].value = e.target.value;
-                                    setNewFilterConditions(updated);
-                                  }}
-                                >
-                                  <option value="">카테고리 선택...</option>
-                                  {categories.map(cat => (
-                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                                  ))}
-                                </select>
-                              ) : showsValue ? (
+                              {showsValue ? (
                                 <input
                                   type="text"
                                   placeholder={getPlaceholder(targetType as FilterTargetType, cond.operator)}
@@ -2806,7 +2479,7 @@ export default function App() {
                     <ul className="list-disc list-inside space-y-1">
                       <li>첫 행은 컬럼명이어야 합니다</li>
                       <li>컬럼명은 기존 테이블과 정확히 일치해야 합니다</li>
-                      <li>선택사항: _memo, _category 컬럼 포함 가능</li>
+                      <li>선택사항: _memo 컬럼 포함 가능</li>
                     </ul>
                   </div>
 

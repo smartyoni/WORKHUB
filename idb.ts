@@ -1,5 +1,5 @@
 // IndexedDB 유틸리티 - WORKHUB 데이터 저장
-import { TableDefinition, BookmarkGroup, AppCategory, CustomFilter } from './types';
+import { TableDefinition, BookmarkGroup, CustomFilter } from './types';
 
 const DB_NAME = 'WORKHUB_DB';
 // ✅ DB_VERSION 관리: 버전 변경 시에는 반드시 마이그레이션 로직을 추가하세요
@@ -161,44 +161,6 @@ export const loadBookmarks = async (): Promise<BookmarkGroup[]> => {
 };
 
 /**
- * 카테고리 저장
- */
-export const saveCategories = async (categories: AppCategory[]): Promise<void> => {
-  const database = db || (await initDB());
-  const transaction = database.transaction([CATEGORIES_STORE], 'readwrite');
-  const store = transaction.objectStore(CATEGORIES_STORE);
-
-  await new Promise<void>((resolve, reject) => {
-    const clearRequest = store.clear();
-    clearRequest.onsuccess = () => resolve();
-    clearRequest.onerror = () => reject(clearRequest.error);
-  });
-
-  for (const category of categories) {
-    await new Promise<void>((resolve, reject) => {
-      const addRequest = store.add(category);
-      addRequest.onsuccess = () => resolve();
-      addRequest.onerror = () => reject(addRequest.error);
-    });
-  }
-};
-
-/**
- * 카테고리 로드
- */
-export const loadCategories = async (): Promise<AppCategory[]> => {
-  const database = db || (await initDB());
-  const transaction = database.transaction([CATEGORIES_STORE], 'readonly');
-  const store = transaction.objectStore(CATEGORIES_STORE);
-
-  return new Promise((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => reject(request.error);
-  });
-};
-
-/**
  * 필터 저장
  */
 export const saveFilters = async (filters: CustomFilter[]): Promise<void> => {
@@ -240,14 +202,13 @@ export const loadFilters = async (): Promise<CustomFilter[]> => {
  * 모든 데이터 로드
  */
 export const loadAllData = async () => {
-  const [tables, bookmarks, categories, filters] = await Promise.all([
+  const [tables, bookmarks, filters] = await Promise.all([
     loadTables(),
     loadBookmarks(),
-    loadCategories(),
     loadFilters(),
   ]);
 
-  return { tables, bookmarks, categories, filters };
+  return { tables, bookmarks, filters };
 };
 
 /**

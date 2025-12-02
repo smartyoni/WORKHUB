@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RowData, Column, ChecklistItem, Reply, ColumnType, AppCategory } from '../types';
+import { RowData, Column, ChecklistItem, Reply, ColumnType } from '../types';
 import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface DetailPanelProps {
@@ -10,8 +10,6 @@ interface DetailPanelProps {
   onClose: () => void;
   onUpdate: (updatedRow: RowData) => void;
   onDeleteRow: (rowId: string) => void;
-  categories: AppCategory[];
-  categoryInputType: 'dropdown' | 'buttons';
   setIsConfirmModalOpen: (isOpen: boolean) => void;
   setConfirmModalMessage: (message: string) => void;
   setConfirmModalAction: (action: (() => void) | null) => void;
@@ -26,8 +24,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   onClose,
   onUpdate,
   onDeleteRow,
-  categories,
-  categoryInputType,
   setIsConfirmModalOpen,
   setConfirmModalMessage,
   setConfirmModalAction,
@@ -159,50 +155,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
         {/* Mobile Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
-
-          {/* Category - Only for 고객 목록 table */}
-          {tableName === '고객 목록' && (
-          <div className="space-y-2">
-            {categoryInputType === 'dropdown' ? (
-                <select
-                  value={localRow._category || categories[0]?.name || ''}
-                  onChange={(e) => {
-                    const updated = { ...localRow, _category: e.target.value };
-                    setLocalRow(updated);
-                    onUpdate(updated);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white text-sm"
-                >
-                  {categories.map(cat => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-            ) : (
-                <div className="flex flex-wrap gap-2">
-                    {categories.map(cat => {
-                        const isActive = localRow._category === cat.name;
-                        return (
-                            <button
-                              key={cat.id}
-                              onClick={() => {
-                                  const updated = { ...localRow, _category: cat.name };
-                                  setLocalRow(updated);
-                                  onUpdate(updated);
-                              }}
-                              className={`px-3 py-1 text-xs rounded-full border transition-all ${
-                                  isActive
-                                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                              }`}
-                            >
-                                {cat.name}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-          </div>
-          )}
 
           {/* Checklist */}
           <div className="space-y-3">
@@ -396,50 +348,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-8">
         
-        {/* Category - Only for 고객 목록 table */}
-        {tableName === '고객 목록' && (
-        <div className="space-y-2">
-          {categoryInputType === 'dropdown' ? (
-              <select
-                value={localRow._category || categories[0]?.name || ''}
-                onChange={(e) => {
-                  const updated = { ...localRow, _category: e.target.value };
-                  setLocalRow(updated);
-                  onUpdate(updated);
-                }}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
-              >
-                {categories.map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                ))}
-              </select>
-          ) : (
-              <div className="flex flex-wrap gap-2">
-                  {categories.map(cat => {
-                      const isActive = localRow._category === cat.name;
-                      return (
-                          <button
-                            key={cat.id}
-                            onClick={() => {
-                                const updated = { ...localRow, _category: cat.name };
-                                setLocalRow(updated);
-                                onUpdate(updated);
-                            }}
-                            className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                                isActive
-                                ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                          >
-                              {cat.name}
-                          </button>
-                      );
-                  })}
-              </div>
-          )}
-        </div>
-        )}
-
         {/* Basic Info */}
         <div className="space-y-1">
           <div className="flex items-center justify-between border-b border-gray-200 pb-2"> {/* This is the container for h3 and the button */}

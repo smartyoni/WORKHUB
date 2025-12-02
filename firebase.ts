@@ -10,7 +10,7 @@ import {
   doc,
   deleteDoc,
 } from 'firebase/firestore';
-import { TableDefinition, BookmarkGroup, AppCategory, CustomFilter } from './types';
+import { TableDefinition, BookmarkGroup, CustomFilter } from './types';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -157,52 +157,6 @@ export const loadBookmarks = async (): Promise<BookmarkGroup[]> => {
 };
 
 /**
- * Save categories to Firestore
- */
-export const saveCategories = async (categories: AppCategory[]): Promise<void> => {
-  try {
-    await ensureAuth();
-    const batch = writeBatch(db);
-    const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.CATEGORIES}`);
-
-    // Delete existing documents
-    const existingDocs = await getDocs(collectionRef);
-    existingDocs.forEach((document) => {
-      batch.delete(document.ref);
-    });
-
-    // Add new documents
-    categories.forEach((category) => {
-      const docRef = doc(collectionRef, category.id);
-      batch.set(docRef, category);
-    });
-
-    await batch.commit();
-    console.log('Categories saved successfully');
-  } catch (error) {
-    console.error('Failed to save categories:', error);
-    throw error;
-  }
-};
-
-/**
- * Load categories from Firestore
- */
-export const loadCategories = async (): Promise<AppCategory[]> => {
-  try {
-    await ensureAuth();
-    const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.CATEGORIES}`);
-    const querySnapshot = await getDocs(collectionRef);
-    const categories = querySnapshot.docs.map((document) => document.data() as AppCategory);
-    console.log(`Loaded ${categories.length} categories`);
-    return categories;
-  } catch (error) {
-    console.error('Failed to load categories:', error);
-    return [];
-  }
-};
-
-/**
  * Save filters to Firestore
  */
 export const saveFilters = async (filters: CustomFilter[]): Promise<void> => {
@@ -253,18 +207,17 @@ export const loadFilters = async (): Promise<CustomFilter[]> => {
  */
 export const loadAllData = async () => {
   try {
-    const [tables, bookmarks, categories, filters] = await Promise.all([
+    const [tables, bookmarks, filters] = await Promise.all([
       loadTables(),
       loadBookmarks(),
-      loadCategories(),
       loadFilters(),
     ]);
 
     console.log('All data loaded successfully');
-    return { tables, bookmarks, categories, filters };
+    return { tables, bookmarks, filters };
   } catch (error) {
     console.error('Failed to load all data:', error);
-    return { tables: [], bookmarks: [], categories: [], filters: [] };
+    return { tables: [], bookmarks: [], filters: [] };
   }
 };
 
