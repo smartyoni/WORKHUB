@@ -99,14 +99,19 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   },
 ];
 
-// 테이블별 초기 카테고리 생성 함수
-const createInitialCategories = (tableId: string): AppCategory[] => [
-    { id: `cat-${tableId}-unset`, tableId, name: '미설정' },
-    { id: `cat-${tableId}-1`, tableId, name: '기본 프로젝트' },
-    { id: `cat-${tableId}-2`, tableId, name: '긴급 요청' },
-    { id: `cat-${tableId}-3`, tableId, name: '보류 상태' },
-    { id: `cat-${tableId}-4`, tableId, name: '완료됨' },
-];
+// 테이블별 초기 카테고리 생성 함수 (table-1 '고객 목록'만 카테고리 생성)
+const createInitialCategories = (tableId: string): AppCategory[] => {
+    // table-1 ('고객 목록')만 카테고리를 생성, 다른 테이블은 카테고리 없음
+    if (tableId !== 'table-1') return [];
+
+    return [
+        { id: `cat-${tableId}-unset`, tableId, name: '미설정' },
+        { id: `cat-${tableId}-1`, tableId, name: '기본 프로젝트' },
+        { id: `cat-${tableId}-2`, tableId, name: '긴급 요청' },
+        { id: `cat-${tableId}-3`, tableId, name: '보류 상태' },
+        { id: `cat-${tableId}-4`, tableId, name: '완료됨' },
+    ];
+};
 
 // --- CONSTANTS ---
 const TODAY_TABLE_NAME = '오늘 기록';
@@ -169,7 +174,7 @@ const initialTablesUnsorted: TableDefinition[] = [
       'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
       'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
       _memo: '',
-      _category: '미설정',
+      _category: '',
       _checklists: [],
     })),
   },
@@ -1767,13 +1772,15 @@ export default function App() {
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0">
           <div className="p-4 flex items-center justify-between">
             <h2 className="font-bold text-gray-800">필터</h2>
-            <button 
+            {activeTableId === 'table-1' && (
+            <button
                 onClick={() => setIsCategorySettingsModalOpen(true)}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition-colors"
                 title="설정 (카테고리 관리)"
             >
                 <Settings className="w-4 h-4"/>
             </button>
+            )}
           </div>
           
           <div className="flex-1 overflow-y-auto px-2 space-y-1">
@@ -1820,32 +1827,36 @@ export default function App() {
               </>
             ) : (
               <>
-                {/* Category-based sidebar for non-TODAY tables */}
-                <SideMenuItem
-                  icon={Inbox}
-                  label="미설정"
-                  count={getUnsetCategoryCount()}
-                  active={activeCategoryFilter === '미설정'}
-                  onClick={() => setActiveCategoryFilter('미설정')}
-                />
+                {/* Category-based sidebar for table-1 only */}
+                {activeTableId === 'table-1' && (
+                <>
+                  <SideMenuItem
+                    icon={Inbox}
+                    label="미설정"
+                    count={getUnsetCategoryCount()}
+                    active={activeCategoryFilter === '미설정'}
+                    onClick={() => setActiveCategoryFilter('미설정')}
+                  />
 
-                {/* Used Categories Section */}
-                {usedCategories.length > 0 && (
-                  <>
-                    <div className="mt-4 pt-2 border-t border-gray-100">
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">카테고리</h3>
-                    </div>
-                    {usedCategories.map(category => (
-                      <SideMenuItem
-                        key={category.id}
-                        icon={ListFilter}
-                        label={category.name}
-                        count={getCategoryCount(category.name)}
-                        active={activeCategoryFilter === category.name}
-                        onClick={() => setActiveCategoryFilter(category.name)}
-                      />
-                    ))}
-                  </>
+                  {/* Used Categories Section */}
+                  {usedCategories.length > 0 && (
+                    <>
+                      <div className="mt-4 pt-2 border-t border-gray-100">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">카테고리</h3>
+                      </div>
+                      {usedCategories.map(category => (
+                        <SideMenuItem
+                          key={category.id}
+                          icon={ListFilter}
+                          label={category.name}
+                          count={getCategoryCount(category.name)}
+                          active={activeCategoryFilter === category.name}
+                          onClick={() => setActiveCategoryFilter(category.name)}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
                 )}
               </>
             )}

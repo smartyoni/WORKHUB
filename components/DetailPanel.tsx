@@ -160,7 +160,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         {/* Mobile Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
 
-          {/* Category */}
+          {/* Category - Only for 고객 목록 table */}
+          {tableName === '고객 목록' && (
           <div className="space-y-2">
             {categoryInputType === 'dropdown' ? (
                 <select
@@ -201,6 +202,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </div>
             )}
           </div>
+          )}
 
           {/* Checklist */}
           <div className="space-y-3">
@@ -394,7 +396,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-8">
         
-        {/* Category */}
+        {/* Category - Only for 고객 목록 table */}
+        {tableName === '고객 목록' && (
         <div className="space-y-2">
           {categoryInputType === 'dropdown' ? (
               <select
@@ -423,8 +426,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                                 onUpdate(updated);
                             }}
                             className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                                isActive 
-                                ? 'bg-purple-600 text-white border-purple-600 shadow-sm' 
+                                isActive
+                                ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                             }`}
                           >
@@ -435,6 +438,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </div>
           )}
         </div>
+        )}
 
         {/* Basic Info */}
         <div className="space-y-1">
