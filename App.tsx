@@ -110,7 +110,7 @@ const createInitialCategories = (tableId: string): AppCategory[] => [
 ];
 
 // --- CONSTANTS ---
-const TODAY_TABLE_NAME = 'TODAY';
+const TODAY_TABLE_NAME = '오늘 기록';
 
 const getTodayTableId = (tables: TableDefinition[]): string | null => {
   return tables.find(t => t.name === TODAY_TABLE_NAME)?.id || null;
@@ -166,7 +166,7 @@ const initialTablesUnsorted: TableDefinition[] = [
     ],
     rows: Array.from({ length: 8 }).map((_, i) => ({
       id: `row-today-${i}`,
-      'col-1': `2025-12-${String(5 - Math.floor(i / 2)).padStart(2, '0')}`,
+      'col-1': `2025-12-${String(2 - Math.floor(i / 2)).padStart(2, '0')}`,
       'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
       'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
       _memo: '',
@@ -322,9 +322,20 @@ export default function App() {
 
   // --- TODAY TABLE DATE HELPERS ---
   const getTodayTableDates = (): { date: string; displayDate: string; count: number }[] => {
+    // === DEBUG: getTodayTableDates called ===
+    console.log('=== DEBUG: getTodayTableDates called ===');
+    console.log('  activeTable exists:', !!activeTable);
+    console.log('  todayTableId:', todayTableId);
+    console.log('  activeTableId:', activeTableId);
+    console.log('  Match?:', activeTableId === todayTableId);
+
     if (!activeTable || !todayTableId || activeTableId !== todayTableId) {
+      console.log('  -> Returning empty array (condition not met)');
       return [];
     }
+
+    console.log('  -> Processing dates...');
+    console.log('  Row count:', activeTable.rows.length);
 
     // Get all unique dates from col-1 and count them
     const dateMap = new Map<string, number>();
@@ -334,6 +345,9 @@ export default function App() {
         dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
       }
     });
+
+    // === DEBUG: Dates extracted ===
+    console.log('  Dates in rows:', Array.from(dateMap.keys()));
 
     // Convert to array, sort by date descending (newest first), and format
     return Array.from(dateMap.entries())
@@ -439,6 +453,16 @@ export default function App() {
         // TODAY 테이블 ID 설정
         const todayId = getTodayTableId(sortedInitialTables);
         setTodayTableId(todayId);
+
+        // === DEBUG: All Tables ===
+        console.log('=== DEBUG: All Tables ===');
+        sortedInitialTables.forEach(t => console.log(`  - ID: ${t.id}, Name: "${t.name}"`));
+
+        // === DEBUG: TODAY Table Detection ===
+        console.log('=== DEBUG: TODAY Table Detection ===');
+        console.log('  TODAY_TABLE_NAME:', TODAY_TABLE_NAME);
+        console.log('  Found todayTableId:', todayId);
+        console.log('  activeTableId:', activeTableId);
 
         // 저장된 테이블 ID가 초기 테이블 목록에 없으면 TODAY 테이블로 설정
         const savedTableId = localStorage.getItem('activeTableId');
@@ -582,6 +606,21 @@ export default function App() {
   const isToday = (date: Date): boolean => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
+  };
+
+  // 문자열 날짜(YYYY-MM-DD)와 오늘 날짜 비교
+  const isDateToday = (dateStr: string): boolean => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return dateStr === todayStr;
+  };
+
+  // 문자열 날짜(YYYY-MM-DD)와 어제 날짜 비교
+  const isDateYesterday = (dateStr: string): boolean => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    return dateStr === yesterdayStr;
   };
 
   const isThisWeek = (date: Date): boolean => {
@@ -1497,8 +1536,11 @@ export default function App() {
                         setSelectedRowId(row.id);
                         setIsDetailPanelModal(true);
                       }}
-                      className={`border-b cursor-pointer hover:bg-gray-100 transition-colors ${
-                        selectedRowId === row.id ? 'bg-blue-50' : ''
+                      className={`border-b cursor-pointer transition-colors ${
+                        selectedRowId === row.id ? 'bg-blue-50' :
+                        isDateToday(String(row['col-1'] || '')) ? 'bg-red-100 hover:bg-red-200' :
+                        isDateYesterday(String(row['col-1'] || '')) ? 'bg-blue-100 hover:bg-blue-200' :
+                        'hover:bg-gray-100'
                       }`}
                     >
                       {visibleColumns.map(col => (
@@ -1752,21 +1794,31 @@ export default function App() {
             {activeTableId === todayTableId ? (
               <>
                 {/* Date List */}
-                {getTodayTableDates().length > 0 && (
-                  <div className="mt-4 pt-2 border-t border-gray-100">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">날짜</h3>
-                  </div>
-                )}
-                {getTodayTableDates().map((dateItem) => (
-                  <SideMenuItem
-                    key={dateItem.date}
-                    icon={Calendar}
-                    label={dateItem.displayDate}
-                    count={dateItem.count}
-                    active={activeDateFilter === dateItem.date}
-                    onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
-                  />
-                ))}
+                {(() => {
+                  const dates = getTodayTableDates();
+                  console.log('=== DEBUG: Sidebar rendering TODAY table ===');
+                  console.log('  Date list length:', dates.length);
+                  console.log('  Dates:', dates);
+                  return (
+                    <>
+                      {dates.length > 0 && (
+                        <div className="mt-4 pt-2 border-t border-gray-100">
+                          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">날짜</h3>
+                        </div>
+                      )}
+                      {dates.map((dateItem) => (
+                        <SideMenuItem
+                          key={dateItem.date}
+                          icon={Calendar}
+                          label={dateItem.displayDate}
+                          count={dateItem.count}
+                          active={activeDateFilter === dateItem.date}
+                          onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                        />
+                      ))}
+                    </>
+                  );
+                })()}
               </>
             ) : (
               <>
@@ -1961,10 +2013,15 @@ export default function App() {
                         </thead>
                         <tbody className="divide-y divide-gray-400">
                             {filteredRows.map((row) => (
-                                <tr 
-                                    key={row.id} 
+                                <tr
+                                    key={row.id}
                                     onClick={() => handleRowClick(row.id)}
-                                    className={`cursor-pointer transition-colors ${selectedRowId === row.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                                    className={`cursor-pointer transition-colors ${
+                                        selectedRowId === row.id ? 'bg-blue-50' :
+                                        isDateToday(String(row['col-1'] || '')) ? 'bg-red-100 hover:bg-red-200' :
+                                        isDateYesterday(String(row['col-1'] || '')) ? 'bg-blue-100 hover:bg-blue-200' :
+                                        'hover:bg-gray-50'
+                                    }`}
                                 >
                                     {visibleColumns.map(col => (
                                         <td
