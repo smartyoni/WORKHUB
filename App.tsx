@@ -29,7 +29,8 @@ import {
   Circle,
   Upload,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 
 // --- 색상 팔레트 정의 (선명하고 생생한 색상) ---
@@ -109,11 +110,15 @@ const createInitialCategories = (tableId: string): AppCategory[] => [
 ];
 
 // --- CONSTANTS ---
-const TODAY_TABLE_ID = 'table-2';
+const TODAY_TABLE_NAME = '오늘 기록';
+
+const getTodayTableId = (tables: TableDefinition[]): string | null => {
+  return tables.find(t => t.name === TODAY_TABLE_NAME)?.id || null;
+};
 
 const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] => {
-  const todayTable = tables.find(t => t.id === TODAY_TABLE_ID);
-  const otherTables = tables.filter(t => t.id !== TODAY_TABLE_ID);
+  const todayTable = tables.find(t => t.name === TODAY_TABLE_NAME);
+  const otherTables = tables.filter(t => t.name !== TODAY_TABLE_NAME);
   return todayTable ? [todayTable, ...otherTables] : tables;
 };
 
@@ -159,7 +164,15 @@ const initialTablesUnsorted: TableDefinition[] = [
       { id: 'col-2', name: '제목', type: ColumnType.TEXT, width: 200 },
       { id: 'col-3', name: '기록시각', type: ColumnType.TIME_AUTO, width: 120 },
     ],
-    rows: [],
+    rows: Array.from({ length: 8 }).map((_, i) => ({
+      id: `row-today-${i}`,
+      'col-1': `2025-12-${String(5 - Math.floor(i / 2)).padStart(2, '0')}`,
+      'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
+      'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
+      _memo: '',
+      _category: '미설정',
+      _checklists: [],
+    })),
   },
 ];
 
@@ -172,10 +185,11 @@ export default function App() {
   const [categories, setCategories] = useState<AppCategory[]>([]);
   const [customFilters, setCustomFilters] = useState<CustomFilter[]>([]);
   const [isDBLoaded, setIsDBLoaded] = useState(false);
+  const [todayTableId, setTodayTableId] = useState<string | null>(null);
   const [activeTableId, setActiveTableId] = useState<string>(() => {
-    // localStorage에서 이전 선택 테이블 복원, 없으면 TODAY 테이블
+    // localStorage에서 이전 선택 테이블 복원
     const saved = localStorage.getItem('activeTableId');
-    return saved || TODAY_TABLE_ID;
+    return saved || '';
   });
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   
@@ -222,7 +236,6 @@ export default function App() {
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
 
   // --- TODAY TABLE DATE FILTER STATE ---
-  const [expandedYearMonth, setExpandedYearMonth] = useState<string | null>(null);
   const [activeDateFilter, setActiveDateFilter] = useState<string | null>(null);
 
   // Filter Creation Form State
@@ -308,68 +321,28 @@ export default function App() {
   };
 
   // --- TODAY TABLE DATE HELPERS ---
-  interface DateGroup {
-    yearMonth: string; // "2025년 12월" format
-    year: number;
-    month: number;
-    dates: {
-      date: string; // "2025-12-05" format
-      displayDate: string; // "12월 5일" format
-      count: number;
-    }[];
-  }
+  const getTodayTableDates = (): { date: string; displayDate: string; count: number }[] => {
+    if (!activeTable || !todayTableId || activeTableId !== todayTableId) {
+      return [];
+    }
 
-  const getTodayTableDateGroups = (): DateGroup[] => {
-    if (!activeTable || activeTableId !== TODAY_TABLE_ID) return [];
-
-    // Group rows by date
-    const dateMap = new Map<string, RowData[]>();
+    // Get all unique dates from col-1 and count them
+    const dateMap = new Map<string, number>();
     activeTable.rows.forEach(row => {
       const dateStr = row['col-1'] as string;
       if (dateStr) {
-        if (!dateMap.has(dateStr)) {
-          dateMap.set(dateStr, []);
-        }
-        dateMap.get(dateStr)!.push(row);
+        dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
       }
     });
 
-    // Convert to groups sorted by date descending
-    const groups = new Map<string, DateGroup>();
-
-    Array.from(dateMap.entries())
-      .sort((a, b) => b[0].localeCompare(a[0])) // Descending date order
-      .forEach(([dateStr, rows]) => {
+    // Convert to array, sort by date descending (newest first), and format
+    return Array.from(dateMap.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([dateStr, count]) => {
         const [year, month, day] = dateStr.split('-').map(Number);
-        const yearMonth = `${year}년 ${month}월`;
-        const displayDate = `${month}월 ${day}일`;
-
-        if (!groups.has(yearMonth)) {
-          groups.set(yearMonth, {
-            yearMonth,
-            year,
-            month,
-            dates: []
-          });
-        }
-
-        groups.get(yearMonth)!.dates.push({
-          date: dateStr,
-          displayDate,
-          count: rows.length
-        });
+        const displayDate = `${year}년 ${month}월 ${day}일`;
+        return { date: dateStr, displayDate, count };
       });
-
-    // Convert to array and sort by year-month descending (newest first)
-    return Array.from(groups.values()).sort((a, b) => {
-      if (a.year !== b.year) return b.year - a.year;
-      return b.month - a.month;
-    });
-  };
-
-  const getTodayTableDateCount = (dateStr: string): number => {
-    if (!activeTable) return 0;
-    return activeTable.rows.filter(row => row['col-1'] === dateStr).length;
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -425,11 +398,19 @@ export default function App() {
         const migratedBookmarks = firebaseData.bookmarks.length > 0 ? migrateBookmarks(firebaseData.bookmarks) : initialBookmarkGroups;
         setTables(sortedTables);
 
+        // TODAY 테이블 ID 설정
+        const todayId = getTodayTableId(sortedTables);
+        setTodayTableId(todayId);
+
         // 저장된 테이블 ID가 현재 테이블 목록에 없으면 TODAY 테이블로 설정
         const savedTableId = localStorage.getItem('activeTableId');
         if (savedTableId && !sortedTables.find(t => t.id === savedTableId)) {
-          setActiveTableId(TODAY_TABLE_ID);
-          localStorage.setItem('activeTableId', TODAY_TABLE_ID);
+          if (todayId) {
+            setActiveTableId(todayId);
+            localStorage.setItem('activeTableId', todayId);
+          }
+        } else if (!savedTableId && todayId) {
+          setActiveTableId(todayId);
         }
         setBookmarks(migratedBookmarks);
 
@@ -455,11 +436,19 @@ export default function App() {
         setCategories(initialCategoriesForAllTables);
         setCustomFilters([]);
 
+        // TODAY 테이블 ID 설정
+        const todayId = getTodayTableId(sortedInitialTables);
+        setTodayTableId(todayId);
+
         // 저장된 테이블 ID가 초기 테이블 목록에 없으면 TODAY 테이블로 설정
         const savedTableId = localStorage.getItem('activeTableId');
         if (savedTableId && !sortedInitialTables.find(t => t.id === savedTableId)) {
-          setActiveTableId(TODAY_TABLE_ID);
-          localStorage.setItem('activeTableId', TODAY_TABLE_ID);
+          if (todayId) {
+            setActiveTableId(todayId);
+            localStorage.setItem('activeTableId', todayId);
+          }
+        } else if (!savedTableId && todayId) {
+          setActiveTableId(todayId);
         }
 
         setDataSource('initial');
@@ -661,12 +650,12 @@ export default function App() {
       }
 
       // Apply category filter second (for non-TODAY tables)
-      if (activeCategoryFilter && activeTableId !== TODAY_TABLE_ID) {
+      if (activeCategoryFilter && activeTableId !== todayTableId) {
           rows = rows.filter(row => row._category === activeCategoryFilter);
       }
 
       // Apply date filter for TODAY table
-      if (activeDateFilter && activeTableId === TODAY_TABLE_ID) {
+      if (activeDateFilter && activeTableId === todayTableId) {
           rows = rows.filter(row => row['col-1'] === activeDateFilter);
       }
 
@@ -905,7 +894,7 @@ export default function App() {
 
   const handleMoveTable = (tableId: string, direction: 'left' | 'right') => {
       // TODAY 테이블은 이동 불가
-      if (tableId === TODAY_TABLE_ID) return;
+      if (tableId === todayTableId) return;
 
       const currentIndex = tables.findIndex(t => t.id === tableId);
       if (currentIndex === -1) return;
@@ -1053,7 +1042,7 @@ export default function App() {
     }
 
     // TODAY 테이블은 삭제 불가
-    if (activeTable.id === TODAY_TABLE_ID) {
+    if (activeTable.id === todayTableId) {
         alert("'오늘 기록' 테이블은 고정되어 있어 삭제할 수 없습니다.");
         return;
     }
@@ -1759,50 +1748,24 @@ export default function App() {
                 }}
             />
 
-            {/* TODAY Table: Date-based sidebar */}
-            {activeTableId === TODAY_TABLE_ID ? (
+            {/* TODAY Table: Date List */}
+            {activeTableId === todayTableId ? (
               <>
-                {/* Date Groups with Accordion */}
-                {getTodayTableDateGroups().map((group) => (
-                  <div key={group.yearMonth} className="mt-1">
-                    {/* Year-Month Header (Accordion Toggle) */}
-                    <button
-                      onClick={() => setExpandedYearMonth(expandedYearMonth === group.yearMonth ? null : group.yearMonth)}
-                      className={`w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-colors ${
-                        expandedYearMonth === group.yearMonth
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'hover:bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      <ChevronRight className={`w-4 h-4 transition-transform ${expandedYearMonth === group.yearMonth ? 'rotate-90' : ''}`} />
-                      <span className="font-semibold text-sm flex-1">{group.yearMonth}</span>
-                      <span className="text-xs text-gray-500">
-                        {group.dates.reduce((sum, d) => sum + d.count, 0)}
-                      </span>
-                    </button>
-
-                    {/* Expanded: Show individual dates */}
-                    {expandedYearMonth === group.yearMonth && (
-                      <div className="ml-2 mt-1 space-y-1">
-                        {group.dates.map((dateItem) => (
-                          <button
-                            key={dateItem.date}
-                            onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
-                            className={`w-full text-left px-3 py-1.5 rounded-md text-sm flex items-center justify-between transition-colors ${
-                              activeDateFilter === dateItem.date
-                                ? 'bg-blue-500 text-white'
-                                : 'hover:bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            <span>{dateItem.displayDate}</span>
-                            <span className={`text-xs font-medium ${activeDateFilter === dateItem.date ? 'text-blue-100' : 'text-gray-500'}`}>
-                              ({dateItem.count})
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                {/* Date List */}
+                {getTodayTableDates().length > 0 && (
+                  <div className="mt-4 pt-2 border-t border-gray-100">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">날짜</h3>
                   </div>
+                )}
+                {getTodayTableDates().map((dateItem) => (
+                  <SideMenuItem
+                    key={dateItem.date}
+                    icon={Calendar}
+                    label={dateItem.displayDate}
+                    count={dateItem.count}
+                    active={activeDateFilter === dateItem.date}
+                    onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                  />
                 ))}
               </>
             ) : (
