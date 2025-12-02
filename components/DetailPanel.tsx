@@ -370,7 +370,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   // Desktop Layout - Side panel
   return (
     <div
-      className={`fixed inset-y-0 right-0 w-[750px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col border-l border-gray-200 ${
+      className={`fixed inset-y-0 right-0 w-[900px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col border-l border-gray-200 ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
