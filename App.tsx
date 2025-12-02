@@ -100,7 +100,7 @@ const initialBookmarkGroups: BookmarkGroup[] = [
 ];
 
 // --- CONSTANTS ---
-const TODAY_TABLE_NAME = '오늘 기록';
+const TODAY_TABLE_NAME = 'TODAY';
 
 const getTodayTableId = (tables: TableDefinition[]): string | null => {
   return tables.find(t => t.name === TODAY_TABLE_NAME)?.id || null;
@@ -115,7 +115,7 @@ const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] =>
 const initialTablesUnsorted: TableDefinition[] = [
   {
     id: 'table-2',
-    name: '오늘 기록',
+    name: 'TODAY',
     columns: [
       { id: 'col-1', name: '기록일', type: ColumnType.DATE_AUTO, width: 120 },
       { id: 'col-2', name: '제목', type: ColumnType.TEXT, width: 200 },
