@@ -218,6 +218,7 @@ export default function App() {
   // --- FILTER STATE ---
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
 
   // Filter Creation Form State
   const [newFilterName, setNewFilterName] = useState('');
@@ -278,6 +279,27 @@ export default function App() {
 
   // Get Categories for current table
   const currentTableCategories = categories.filter(c => c.tableId === activeTableId);
+
+  // Get used categories (categories that are actually set on rows)
+  const usedCategories = useMemo(() => {
+    if (!activeTable) return [];
+    const usedCatNames = new Set(
+      activeTable.rows
+        .map(row => row._category)
+        .filter((cat): cat is string => !!cat && cat.trim() !== '')
+    );
+    return currentTableCategories.filter(cat => usedCatNames.has(cat.name));
+  }, [activeTable, currentTableCategories]);
+
+  // Get count of rows for each used category
+  const getCategoryCount = (categoryName: string): number => {
+    return activeTable?.rows.filter(row => row._category === categoryName).length || 0;
+  };
+
+  // Get count of unset category rows
+  const getUnsetCategoryCount = (): number => {
+    return activeTable?.rows.filter(row => !row._category || row._category.trim() === '').length || 0;
+  };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
   useEffect(() => {
@@ -390,6 +412,7 @@ export default function App() {
   useEffect(() => {
     setIsDeleteLocked(true);
     setActiveFilterId(null);
+    setActiveCategoryFilter(null);
     localStorage.setItem('activeTableId', activeTableId);
   }, [activeTableId]);
 
@@ -532,37 +555,50 @@ export default function App() {
   // --- FILTER LOGIC ---
   const getFilteredRows = () => {
       if (!activeTable) return [];
-      if (!activeFilterId) return activeTable.rows;
 
-      const filter = customFilters.find(f => f.id === activeFilterId);
-      if (!filter) return activeTable.rows;
+      let rows = activeTable.rows;
 
-      return activeTable.rows.filter(row => {
-          // AND Logic: All conditions must be true
-          return filter.conditions.every(cond => {
-              // Migrate legacy filters automatically
-              const migratedCondition = migrateFilterCondition(cond);
+      // Apply custom filter first
+      if (activeFilterId) {
+          const filter = customFilters.find(f => f.id === activeFilterId);
+          if (filter) {
+              rows = rows.filter(row => {
+                  // AND Logic: All conditions must be true
+                  return filter.conditions.every(cond => {
+                      // Migrate legacy filters automatically
+                      const migratedCondition = migrateFilterCondition(cond);
 
-              // Route to appropriate evaluator based on target type
-              switch (migratedCondition.target.type) {
-                  case 'column':
-                      return evaluateColumnFilter(row, migratedCondition);
-                  case 'category':
-                      return evaluateCategoryFilter(row, migratedCondition);
-                  case 'memo':
-                      return evaluateMemoFilter(row, migratedCondition);
-                  case 'checklist':
-                      return evaluateChecklistFilter(row, migratedCondition);
-                  case 'reply':
-                      return evaluateReplyFilter(row, migratedCondition);
-                  default:
-                      return true;
-              }
-          });
-      });
+                      // Route to appropriate evaluator based on target type
+                      switch (migratedCondition.target.type) {
+                          case 'column':
+                              return evaluateColumnFilter(row, migratedCondition);
+                          case 'category':
+                              return evaluateCategoryFilter(row, migratedCondition);
+                          case 'memo':
+                              return evaluateMemoFilter(row, migratedCondition);
+                          case 'checklist':
+                              return evaluateChecklistFilter(row, migratedCondition);
+                          case 'reply':
+                              return evaluateReplyFilter(row, migratedCondition);
+                          default:
+                              return true;
+                      }
+                  });
+              });
+          }
+      }
+
+      // Apply category filter second
+      if (activeCategoryFilter === 'UNSET') {
+          rows = rows.filter(row => !row._category || row._category.trim() === '');
+      } else if (activeCategoryFilter) {
+          rows = rows.filter(row => row._category === activeCategoryFilter);
+      }
+
+      return rows;
   };
 
-  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters]);
+  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeCategoryFilter]);
 
   // --- AUTO SAVE TO FIREBASE ---
   // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
@@ -1633,14 +1669,43 @@ export default function App() {
           </div>
           
           <div className="flex-1 overflow-y-auto px-2 space-y-1">
-            <SideMenuItem 
-                icon={LayoutGrid} 
-                label="전체" 
-                count={activeTable?.rows.length || 0} 
-                active={activeFilterId === null}
-                onClick={() => setActiveFilterId(null)}
+            <SideMenuItem
+                icon={LayoutGrid}
+                label="전체"
+                count={activeTable?.rows.length || 0}
+                active={activeCategoryFilter === null}
+                onClick={() => setActiveCategoryFilter(null)}
             />
-            
+
+            {/* Unset Category Item */}
+            {getUnsetCategoryCount() > 0 && (
+              <SideMenuItem
+                icon={Inbox}
+                label="미설정"
+                count={getUnsetCategoryCount()}
+                active={activeCategoryFilter === 'UNSET'}
+                onClick={() => setActiveCategoryFilter('UNSET')}
+              />
+            )}
+
+            {/* Used Categories Section */}
+            {usedCategories.length > 0 && (
+              <>
+                <div className="mt-4 pt-2 border-t border-gray-100">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">카테고리</h3>
+                </div>
+                {usedCategories.map(category => (
+                  <SideMenuItem
+                    key={category.id}
+                    icon={ListFilter}
+                    label={category.name}
+                    count={getCategoryCount(category.name)}
+                    active={activeCategoryFilter === category.name}
+                    onClick={() => setActiveCategoryFilter(category.name)}
+                  />
+                ))}
+              </>
+            )}
           </div>
         </aside>
 
