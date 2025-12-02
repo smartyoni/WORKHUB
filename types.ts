@@ -61,6 +61,7 @@ export interface BookmarkGroup {
 
 export interface AppCategory {
   id: string;
+  tableId: string;
   name: string;
 }
 

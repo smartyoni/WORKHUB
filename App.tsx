@@ -99,11 +99,12 @@ const initialBookmarkGroups: BookmarkGroup[] = [
   },
 ];
 
-const initialCategories: AppCategory[] = [
-    { id: 'cat-1', name: '기본 프로젝트' },
-    { id: 'cat-2', name: '긴급 요청' },
-    { id: 'cat-3', name: '보류 상태' },
-    { id: 'cat-4', name: '완료됨' },
+// 테이블별 초기 카테고리 생성 함수
+const createInitialCategories = (tableId: string): AppCategory[] => [
+    { id: `cat-${tableId}-1`, tableId, name: '기본 프로젝트' },
+    { id: `cat-${tableId}-2`, tableId, name: '긴급 요청' },
+    { id: `cat-${tableId}-3`, tableId, name: '보류 상태' },
+    { id: `cat-${tableId}-4`, tableId, name: '완료됨' },
 ];
 
 // --- CONSTANTS ---
@@ -271,9 +272,12 @@ export default function App() {
   const activeTable = tables.find(t => t.id === activeTableId);
   const visibleColumns = activeTable?.columns.filter(c => !c.isHidden) || [];
   const hiddenColumns = activeTable?.columns.filter(c => c.isHidden) || [];
-  
+
   // Get Filters for current table
   const currentTableFilters = customFilters.filter(f => f.tableId === activeTableId);
+
+  // Get Categories for current table
+  const currentTableCategories = categories.filter(c => c.tableId === activeTableId);
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
   useEffect(() => {
@@ -334,7 +338,10 @@ export default function App() {
           localStorage.setItem('activeTableId', TODAY_TABLE_ID);
         }
         setBookmarks(migratedBookmarks);
-        setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategories);
+
+        // 각 테이블에 대한 초기 카테고리 생성
+        const initialCategoriesForAllTables = sortedTables.flatMap(table => createInitialCategories(table.id));
+        setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategoriesForAllTables);
         setCustomFilters(firebaseData.filters || []);
 
         // ✅ 데이터 소스 결정 (초기값 vs 실제 데이터)
@@ -348,7 +355,10 @@ export default function App() {
         const sortedInitialTables = sortTablesByTodayFirst(initialTables);
         setTables(sortedInitialTables);
         setBookmarks(initialBookmarkGroups);
-        setCategories(initialCategories);
+
+        // 각 테이블에 대한 초기 카테고리 생성
+        const initialCategoriesForAllTables = sortedInitialTables.flatMap(table => createInitialCategories(table.id));
+        setCategories(initialCategoriesForAllTables);
         setCustomFilters([]);
 
         // 저장된 테이블 ID가 초기 테이블 목록에 없으면 TODAY 테이블로 설정
@@ -699,29 +709,38 @@ export default function App() {
 
   // --- CATEGORY LOGIC ---
   const handleAddCategory = () => {
-      if(!newCategoryName.trim()) return;
-      setCategories([...categories, { id: Date.now().toString(), name: newCategoryName.trim() }]);
+      if(!newCategoryName.trim() || !activeTable) return;
+      setCategories([...categories, {
+        id: `${activeTableId}-${Date.now()}`,
+        tableId: activeTableId,
+        name: newCategoryName.trim()
+      }]);
       setNewCategoryName('');
   };
 
   const handleRemoveCategory = (catId: string) => {
-      if(categories.length <= 1) {
+      // 현재 테이블의 카테고리 개수 확인
+      if(currentTableCategories.length <= 1) {
           alert("최소 하나의 카테고리는 존재해야 합니다.");
           return;
       }
       const categoryToRemove = categories.find(c => c.id === catId);
-      const defaultCategory = categories.find(c => c.id !== catId); // Find any other category to be default
+      // 같은 테이블의 다른 카테고리 찾기
+      const defaultCategory = currentTableCategories.find(c => c.id !== catId);
 
       setCategories(prev => prev.filter(c => c.id !== catId));
 
-      // Update all rows in all tables that use the removed category to the default
-      if (categoryToRemove && defaultCategory) {
-          setTables(prevTables => prevTables.map(table => ({
-              ...table,
-              rows: table.rows.map(row => 
-                  row._category === categoryToRemove.name ? { ...row, _category: defaultCategory.name } : row
-              )
-          })));
+      // 현재 테이블의 행들만 업데이트
+      if (categoryToRemove && defaultCategory && activeTable) {
+          setTables(prevTables => prevTables.map(table => {
+              if (table.id !== activeTableId) return table;
+              return {
+                  ...table,
+                  rows: table.rows.map(row =>
+                      row._category === categoryToRemove.name ? { ...row, _category: defaultCategory.name } : row
+                  )
+              };
+          }));
       }
   };
 
@@ -1441,7 +1460,7 @@ export default function App() {
                     setIsDetailPanelModal(false);
                     setSelectedRowId(null);
                   }}
-                  categories={categories}
+                  categories={currentTableCategories}
                   categoryInputType={categoryInputType}
                   setIsConfirmModalOpen={setIsConfirmModalOpen}
                   setConfirmModalMessage={setConfirmModalMessage}
@@ -1622,34 +1641,6 @@ export default function App() {
                 onClick={() => setActiveFilterId(null)}
             />
             
-            {/* Custom Filters Section */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between px-2 mb-2">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">내 필터</h3>
-                    <button 
-                        onClick={openFilterModal}
-                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                        title="필터 추가"
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-                {currentTableFilters.map(filter => (
-                    <SideMenuItem 
-                        key={filter.id}
-                        icon={ListFilter}
-                        label={filter.name}
-                        active={activeFilterId === filter.id}
-                        onClick={() => setActiveFilterId(filter.id)}
-                        onDelete={(e: any) => deleteFilter(e, filter.id, filter.name)}
-                    />
-                ))}
-                {currentTableFilters.length === 0 && (
-                    <div className="px-4 py-2 text-xs text-gray-400 italic">
-                        생성된 필터가 없습니다.
-                    </div>
-                )}
-            </div>
           </div>
         </aside>
 
@@ -1850,15 +1841,15 @@ export default function App() {
         )}
 
         {/* 3. Detail Panel (Sliding Right Sidebar) */}
-        <DetailPanel 
+        <DetailPanel
             tableName={activeTable?.name || ''}
-            columns={visibleColumns} 
+            columns={visibleColumns}
             row={activeTable?.rows.find(r => r.id === selectedRowId) || null}
             isOpen={!!selectedRowId}
             onClose={() => setSelectedRowId(null)}
             onUpdate={updateRow}
             onDeleteRow={handleDeleteRow}
-            categories={categories}
+            categories={currentTableCategories}
             categoryInputType={categoryInputType}
             setIsConfirmModalOpen={setIsConfirmModalOpen}
             setConfirmModalMessage={setConfirmModalMessage}
@@ -2011,10 +2002,10 @@ export default function App() {
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                            {categories.map(cat => (
+                            {currentTableCategories.map(cat => (
                                 <div key={cat.id} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full border border-gray-200 text-sm text-gray-700">
                                     <span>{cat.name}</span>
-                                    <button 
+                                    <button
                                         onClick={() => handleRemoveCategory(cat.id)}
                                         className="text-gray-400 hover:text-red-500 p-0.5 rounded-full hover:bg-gray-200 transition-colors"
                                     >

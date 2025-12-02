@@ -19,7 +19,10 @@
       "Bash(git push)",
       "Bash(del \"c:\\Users\\User\\Downloads\\화면 캡처 2025-11-29 145707.png\")",
       "Bash(tasklist:*)",
-      "Bash(powershell -Command \"Stop-Process -Name node -Force\")"
+      "Bash(powershell -Command \"Stop-Process -Name node -Force\")",
+      "Bash(timeout 3 powershell:*)",
+      "Bash(timeout 5 powershell:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
