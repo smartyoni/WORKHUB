@@ -298,7 +298,12 @@ export default function App() {
 
   // Get count of unset category rows
   const getUnsetCategoryCount = (): number => {
-    return activeTable?.rows.filter(row => !row._category || row._category.trim() === '').length || 0;
+    if (!activeTable) return 0;
+    const unsetCount = activeTable.rows.filter(row => {
+      const isCategoryEmpty = !row._category || (typeof row._category === 'string' && row._category.trim() === '');
+      return isCategoryEmpty;
+    }).length;
+    return unsetCount;
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -590,7 +595,10 @@ export default function App() {
 
       // Apply category filter second
       if (activeCategoryFilter === 'UNSET') {
-          rows = rows.filter(row => !row._category || row._category.trim() === '');
+          rows = rows.filter(row => {
+              const isCategoryEmpty = !row._category || (typeof row._category === 'string' && row._category.trim() === '');
+              return isCategoryEmpty;
+          });
       } else if (activeCategoryFilter) {
           rows = rows.filter(row => row._category === activeCategoryFilter);
       }
@@ -1062,7 +1070,7 @@ export default function App() {
         id: newRowId,
         ...rowFormData,
         _memo: '',
-        _category: categories[0]?.name || '기본',
+        _category: currentTableCategories[0]?.name || '',
         _checklists: []
     };
 
@@ -1137,7 +1145,7 @@ export default function App() {
     const newRows: RowData[] = csvValidationResult.validatedRows.map((validatedData, index) => {
       // Extract special columns if present in validated data
       const memoValue = validatedData._memo || '';
-      const categoryValue = validatedData._category || categories[0]?.name || '기본';
+      const categoryValue = validatedData._category || '';
 
       // Create row with validated column data
       const newRow: RowData = {
