@@ -253,7 +253,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         {editingChecklistId === item.id ? (
                             <textarea
                                 autoFocus
-                                className="w-full text-xs border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap"
+                                className="w-full text-sm font-semibold border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap"
                                 rows={2}
                                 defaultValue={item.text}
                                 onBlur={(e) => updateChecklistText(item.id, e.target.value)}
@@ -266,7 +266,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                             />
                         ) : (
                             <span
-                                className={`text-xs cursor-pointer select-none block whitespace-pre-wrap break-words ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                                className={`text-sm font-semibold cursor-pointer select-none block whitespace-pre-wrap break-words ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
                                 onDoubleClick={() => setEditingChecklistId(item.id)}
                             >
                                 {item.text}
