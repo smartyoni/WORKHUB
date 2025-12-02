@@ -1678,15 +1678,13 @@ export default function App() {
             />
 
             {/* Unset Category Item */}
-            {getUnsetCategoryCount() > 0 && (
-              <SideMenuItem
-                icon={Inbox}
-                label="미설정"
-                count={getUnsetCategoryCount()}
-                active={activeCategoryFilter === 'UNSET'}
-                onClick={() => setActiveCategoryFilter('UNSET')}
-              />
-            )}
+            <SideMenuItem
+              icon={Inbox}
+              label="미설정"
+              count={getUnsetCategoryCount()}
+              active={activeCategoryFilter === 'UNSET'}
+              onClick={() => setActiveCategoryFilter('UNSET')}
+            />
 
             {/* Used Categories Section */}
             {usedCategories.length > 0 && (
