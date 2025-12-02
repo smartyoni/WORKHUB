@@ -221,6 +221,10 @@ export default function App() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
 
+  // --- TODAY TABLE DATE FILTER STATE ---
+  const [expandedYearMonth, setExpandedYearMonth] = useState<string | null>(null);
+  const [activeDateFilter, setActiveDateFilter] = useState<string | null>(null);
+
   // Filter Creation Form State
   const [newFilterName, setNewFilterName] = useState('');
 
@@ -301,6 +305,71 @@ export default function App() {
   const getUnsetCategoryCount = (): number => {
     if (!activeTable) return 0;
     return activeTable.rows.filter(row => row._category === '미설정').length;
+  };
+
+  // --- TODAY TABLE DATE HELPERS ---
+  interface DateGroup {
+    yearMonth: string; // "2025년 12월" format
+    year: number;
+    month: number;
+    dates: {
+      date: string; // "2025-12-05" format
+      displayDate: string; // "12월 5일" format
+      count: number;
+    }[];
+  }
+
+  const getTodayTableDateGroups = (): DateGroup[] => {
+    if (!activeTable || activeTableId !== TODAY_TABLE_ID) return [];
+
+    // Group rows by date
+    const dateMap = new Map<string, RowData[]>();
+    activeTable.rows.forEach(row => {
+      const dateStr = row['col-1'] as string;
+      if (dateStr) {
+        if (!dateMap.has(dateStr)) {
+          dateMap.set(dateStr, []);
+        }
+        dateMap.get(dateStr)!.push(row);
+      }
+    });
+
+    // Convert to groups sorted by date descending
+    const groups = new Map<string, DateGroup>();
+
+    Array.from(dateMap.entries())
+      .sort((a, b) => b[0].localeCompare(a[0])) // Descending date order
+      .forEach(([dateStr, rows]) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const yearMonth = `${year}년 ${month}월`;
+        const displayDate = `${month}월 ${day}일`;
+
+        if (!groups.has(yearMonth)) {
+          groups.set(yearMonth, {
+            yearMonth,
+            year,
+            month,
+            dates: []
+          });
+        }
+
+        groups.get(yearMonth)!.dates.push({
+          date: dateStr,
+          displayDate,
+          count: rows.length
+        });
+      });
+
+    // Convert to array and sort by year-month descending (newest first)
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+  };
+
+  const getTodayTableDateCount = (dateStr: string): number => {
+    if (!activeTable) return 0;
+    return activeTable.rows.filter(row => row['col-1'] === dateStr).length;
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -591,15 +660,20 @@ export default function App() {
           }
       }
 
-      // Apply category filter second
-      if (activeCategoryFilter) {
+      // Apply category filter second (for non-TODAY tables)
+      if (activeCategoryFilter && activeTableId !== TODAY_TABLE_ID) {
           rows = rows.filter(row => row._category === activeCategoryFilter);
+      }
+
+      // Apply date filter for TODAY table
+      if (activeDateFilter && activeTableId === TODAY_TABLE_ID) {
+          rows = rows.filter(row => row['col-1'] === activeDateFilter);
       }
 
       return rows;
   };
 
-  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeCategoryFilter]);
+  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeCategoryFilter, activeDateFilter, activeTableId]);
 
   // --- AUTO SAVE TO FIREBASE ---
   // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
@@ -1678,35 +1752,88 @@ export default function App() {
                 icon={LayoutGrid}
                 label="전체"
                 count={activeTable?.rows.length || 0}
-                active={activeCategoryFilter === null}
-                onClick={() => setActiveCategoryFilter(null)}
+                active={activeCategoryFilter === null && activeDateFilter === null}
+                onClick={() => {
+                  setActiveCategoryFilter(null);
+                  setActiveDateFilter(null);
+                }}
             />
 
-            {/* Unset Category Item */}
-            <SideMenuItem
-              icon={Inbox}
-              label="미설정"
-              count={getUnsetCategoryCount()}
-              active={activeCategoryFilter === '미설정'}
-              onClick={() => setActiveCategoryFilter('미설정')}
-            />
-
-            {/* Used Categories Section */}
-            {usedCategories.length > 0 && (
+            {/* TODAY Table: Date-based sidebar */}
+            {activeTableId === TODAY_TABLE_ID ? (
               <>
-                <div className="mt-4 pt-2 border-t border-gray-100">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">카테고리</h3>
-                </div>
-                {usedCategories.map(category => (
-                  <SideMenuItem
-                    key={category.id}
-                    icon={ListFilter}
-                    label={category.name}
-                    count={getCategoryCount(category.name)}
-                    active={activeCategoryFilter === category.name}
-                    onClick={() => setActiveCategoryFilter(category.name)}
-                  />
+                {/* Date Groups with Accordion */}
+                {getTodayTableDateGroups().map((group) => (
+                  <div key={group.yearMonth} className="mt-1">
+                    {/* Year-Month Header (Accordion Toggle) */}
+                    <button
+                      onClick={() => setExpandedYearMonth(expandedYearMonth === group.yearMonth ? null : group.yearMonth)}
+                      className={`w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-colors ${
+                        expandedYearMonth === group.yearMonth
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      <ChevronRight className={`w-4 h-4 transition-transform ${expandedYearMonth === group.yearMonth ? 'rotate-90' : ''}`} />
+                      <span className="font-semibold text-sm flex-1">{group.yearMonth}</span>
+                      <span className="text-xs text-gray-500">
+                        {group.dates.reduce((sum, d) => sum + d.count, 0)}
+                      </span>
+                    </button>
+
+                    {/* Expanded: Show individual dates */}
+                    {expandedYearMonth === group.yearMonth && (
+                      <div className="ml-2 mt-1 space-y-1">
+                        {group.dates.map((dateItem) => (
+                          <button
+                            key={dateItem.date}
+                            onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                            className={`w-full text-left px-3 py-1.5 rounded-md text-sm flex items-center justify-between transition-colors ${
+                              activeDateFilter === dateItem.date
+                                ? 'bg-blue-500 text-white'
+                                : 'hover:bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            <span>{dateItem.displayDate}</span>
+                            <span className={`text-xs font-medium ${activeDateFilter === dateItem.date ? 'text-blue-100' : 'text-gray-500'}`}>
+                              ({dateItem.count})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
+              </>
+            ) : (
+              <>
+                {/* Category-based sidebar for non-TODAY tables */}
+                <SideMenuItem
+                  icon={Inbox}
+                  label="미설정"
+                  count={getUnsetCategoryCount()}
+                  active={activeCategoryFilter === '미설정'}
+                  onClick={() => setActiveCategoryFilter('미설정')}
+                />
+
+                {/* Used Categories Section */}
+                {usedCategories.length > 0 && (
+                  <>
+                    <div className="mt-4 pt-2 border-t border-gray-100">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">카테고리</h3>
+                    </div>
+                    {usedCategories.map(category => (
+                      <SideMenuItem
+                        key={category.id}
+                        icon={ListFilter}
+                        label={category.name}
+                        count={getCategoryCount(category.name)}
+                        active={activeCategoryFilter === category.name}
+                        onClick={() => setActiveCategoryFilter(category.name)}
+                      />
+                    ))}
+                  </>
+                )}
               </>
             )}
           </div>
