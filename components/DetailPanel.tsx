@@ -214,7 +214,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <div className="flex gap-2">
               <textarea
                 placeholder="항목 추가 (Ctrl+Enter로 추가)"
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-green-500 resize-none"
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
                 rows={2}
                 value={newChecklistText}
                 onChange={(e) => setNewChecklistText(e.target.value)}
@@ -253,7 +253,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         {editingChecklistId === item.id ? (
                             <textarea
                                 autoFocus
-                                className="w-full text-sm font-semibold border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap"
+                                className="w-full text-base font-semibold border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap"
                                 rows={2}
                                 defaultValue={item.text}
                                 onBlur={(e) => updateChecklistText(item.id, e.target.value)}
