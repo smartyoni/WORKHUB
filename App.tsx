@@ -112,25 +112,7 @@ const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] =>
   return todayTable ? [todayTable, ...otherTables] : tables;
 };
 
-const initialTablesUnsorted: TableDefinition[] = [
-  {
-    id: 'table-2',
-    name: '오늘 기록',
-    columns: [
-      { id: 'col-1', name: '기록일', type: ColumnType.DATE_AUTO, width: 120 },
-      { id: 'col-2', name: '제목', type: ColumnType.TEXT, width: 200 },
-      { id: 'col-3', name: '기록시각', type: ColumnType.TIME_AUTO, width: 120 },
-    ],
-    rows: Array.from({ length: 8 }).map((_, i) => ({
-      id: `row-today-${i}`,
-      'col-1': `2025-12-${String(2 - Math.floor(i / 2)).padStart(2, '0')}`,
-      'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
-      'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
-      _memo: '',
-      _checklists: [],
-    })),
-  },
-];
+const initialTablesUnsorted: TableDefinition[] = [];
 
 // TODAY 테이블이 항상 첫 번째가 되도록 정렬
 const initialTables = sortTablesByTodayFirst(initialTablesUnsorted);
