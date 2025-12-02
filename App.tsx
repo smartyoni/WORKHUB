@@ -110,7 +110,7 @@ const createInitialCategories = (tableId: string): AppCategory[] => [
 ];
 
 // --- CONSTANTS ---
-const TODAY_TABLE_NAME = '오늘 기록';
+const TODAY_TABLE_NAME = 'TODAY';
 
 const getTodayTableId = (tables: TableDefinition[]): string | null => {
   return tables.find(t => t.name === TODAY_TABLE_NAME)?.id || null;
