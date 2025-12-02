@@ -333,9 +333,6 @@ export default function App() {
         }
         setBookmarks(migratedBookmarks);
 
-        // 각 테이블에 대한 초기 카테고리 생성
-        const initialCategoriesForAllTables = sortedTables.flatMap(table => createInitialCategories(table.id));
-        setCategories(firebaseData.categories.length > 0 ? firebaseData.categories : initialCategoriesForAllTables);
         setCustomFilters(firebaseData.filters || []);
 
         // ✅ 데이터 소스 결정 (초기값 vs 실제 데이터)
@@ -350,9 +347,6 @@ export default function App() {
         setTables(sortedInitialTables);
         setBookmarks(initialBookmarkGroups);
 
-        // 각 테이블에 대한 초기 카테고리 생성
-        const initialCategoriesForAllTables = sortedInitialTables.flatMap(table => createInitialCategories(table.id));
-        setCategories(initialCategoriesForAllTables);
         setCustomFilters([]);
 
         // TODAY 테이블 ID 설정
