@@ -101,6 +101,7 @@ const initialBookmarkGroups: BookmarkGroup[] = [
 
 // 테이블별 초기 카테고리 생성 함수
 const createInitialCategories = (tableId: string): AppCategory[] => [
+    { id: `cat-${tableId}-unset`, tableId, name: '미설정' },
     { id: `cat-${tableId}-1`, tableId, name: '기본 프로젝트' },
     { id: `cat-${tableId}-2`, tableId, name: '긴급 요청' },
     { id: `cat-${tableId}-3`, tableId, name: '보류 상태' },
@@ -280,15 +281,15 @@ export default function App() {
   // Get Categories for current table
   const currentTableCategories = categories.filter(c => c.tableId === activeTableId);
 
-  // Get used categories (categories that are actually set on rows)
+  // Get used categories (categories that are actually set on rows, excluding '미설정')
   const usedCategories = useMemo(() => {
     if (!activeTable) return [];
     const usedCatNames = new Set(
       activeTable.rows
         .map(row => row._category)
-        .filter((cat): cat is string => !!cat && cat.trim() !== '')
+        .filter((cat): cat is string => !!cat && cat.trim() !== '' && cat !== '미설정')
     );
-    return currentTableCategories.filter(cat => usedCatNames.has(cat.name));
+    return currentTableCategories.filter(cat => usedCatNames.has(cat.name) && cat.name !== '미설정');
   }, [activeTable, currentTableCategories]);
 
   // Get count of rows for each used category
@@ -299,11 +300,7 @@ export default function App() {
   // Get count of unset category rows
   const getUnsetCategoryCount = (): number => {
     if (!activeTable) return 0;
-    const unsetCount = activeTable.rows.filter(row => {
-      const isCategoryEmpty = !row._category || (typeof row._category === 'string' && row._category.trim() === '');
-      return isCategoryEmpty;
-    }).length;
-    return unsetCount;
+    return activeTable.rows.filter(row => row._category === '미설정').length;
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -319,6 +316,7 @@ export default function App() {
             ...table,
             rows: table.rows.map(row => ({
               ...row,
+              _category: row._category || '미설정',
               _checklists: row._checklists || []
             }))
           }));
@@ -594,12 +592,7 @@ export default function App() {
       }
 
       // Apply category filter second
-      if (activeCategoryFilter === 'UNSET') {
-          rows = rows.filter(row => {
-              const isCategoryEmpty = !row._category || (typeof row._category === 'string' && row._category.trim() === '');
-              return isCategoryEmpty;
-          });
-      } else if (activeCategoryFilter) {
+      if (activeCategoryFilter) {
           rows = rows.filter(row => row._category === activeCategoryFilter);
       }
 
@@ -1066,11 +1059,13 @@ export default function App() {
     if (!activeTable) return;
 
     const newRowId = `row-${Date.now()}`;
+    // "미설정" 카테고리를 기본값으로 사용
+    const unsetCategory = currentTableCategories.find(cat => cat.name === '미설정');
     const newRow: RowData = {
         id: newRowId,
         ...rowFormData,
         _memo: '',
-        _category: currentTableCategories[0]?.name || '',
+        _category: unsetCategory?.name || '미설정',
         _checklists: []
     };
 
@@ -1142,10 +1137,12 @@ export default function App() {
     }
 
     const timestamp = Date.now();
+    // "미설정" 카테고리를 기본값으로 사용
+    const unsetCategory = currentTableCategories.find(cat => cat.name === '미설정');
     const newRows: RowData[] = csvValidationResult.validatedRows.map((validatedData, index) => {
       // Extract special columns if present in validated data
       const memoValue = validatedData._memo || '';
-      const categoryValue = validatedData._category || '';
+      const categoryValue = validatedData._category || unsetCategory?.name || '미설정';
 
       // Create row with validated column data
       const newRow: RowData = {
@@ -1690,8 +1687,8 @@ export default function App() {
               icon={Inbox}
               label="미설정"
               count={getUnsetCategoryCount()}
-              active={activeCategoryFilter === 'UNSET'}
-              onClick={() => setActiveCategoryFilter('UNSET')}
+              active={activeCategoryFilter === '미설정'}
+              onClick={() => setActiveCategoryFilter('미설정')}
             />
 
             {/* Used Categories Section */}
