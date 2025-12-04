@@ -10,7 +10,7 @@ import {
   doc,
   deleteDoc,
 } from 'firebase/firestore';
-import { TableDefinition, BookmarkGroup, CustomFilter } from './types';
+import { TableDefinition, BookmarkGroup, CustomFilter, CategoryGroup } from './types';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -207,17 +207,100 @@ export const loadFilters = async (): Promise<CustomFilter[]> => {
  */
 export const loadAllData = async () => {
   try {
-    const [tables, bookmarks, filters] = await Promise.all([
+    const [tables, bookmarks, filters, categories] = await Promise.all([
       loadTables(),
       loadBookmarks(),
       loadFilters(),
+      loadCategories(),
     ]);
 
     console.log('All data loaded successfully');
-    return { tables, bookmarks, filters };
+    return { tables, bookmarks, filters, categories };
   } catch (error) {
     console.error('Failed to load all data:', error);
-    return { tables: [], bookmarks: [], filters: [] };
+    return { tables: [], bookmarks: [], filters: [], categories: [] };
+  }
+};
+
+/**
+ * Migrate table name from '오늘기록' to 'TODAY'
+ */
+export const migrateTableNameToTODAY = async (): Promise<void> => {
+  try {
+    await ensureAuth();
+    const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.TABLES}`);
+    const querySnapshot = await getDocs(collectionRef);
+    const batch = writeBatch(db);
+    let hasChanges = false;
+
+    console.log(`[MIGRATION] Found ${querySnapshot.docs.length} tables`);
+
+    querySnapshot.docs.forEach((document) => {
+      const table = document.data() as TableDefinition;
+      console.log(`[MIGRATION] Table: "${table.name}" (ID: ${table.id})`);
+
+      if (table.name === '오늘기록') {
+        batch.update(document.ref, { name: 'TODAY' });
+        console.log(`[MIGRATION] ✓ Updating table: ${table.id} from '오늘기록' to 'TODAY'`);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      await batch.commit();
+      console.log('[MIGRATION] ✓ Table name migration completed');
+    } else {
+      console.log('[MIGRATION] No tables to migrate');
+    }
+  } catch (error) {
+    console.error('[MIGRATION] Failed to migrate table names:', error);
+    throw error;
+  }
+};
+
+/**
+ * Save categories to Firestore
+ */
+export const saveCategories = async (categories: CategoryGroup[]): Promise<void> => {
+  try {
+    await ensureAuth();
+    const batch = writeBatch(db);
+    const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.CATEGORIES}`);
+
+    // Delete existing documents
+    const existingDocs = await getDocs(collectionRef);
+    existingDocs.forEach((document) => {
+      batch.delete(document.ref);
+    });
+
+    // Add new documents
+    categories.forEach((category) => {
+      const docRef = doc(collectionRef, category.id);
+      batch.set(docRef, category);
+    });
+
+    await batch.commit();
+    console.log('Categories saved successfully');
+  } catch (error) {
+    console.error('Failed to save categories:', error);
+    throw error;
+  }
+};
+
+/**
+ * Load categories from Firestore
+ */
+export const loadCategories = async (): Promise<CategoryGroup[]> => {
+  try {
+    await ensureAuth();
+    const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.CATEGORIES}`);
+    const querySnapshot = await getDocs(collectionRef);
+    const categories = querySnapshot.docs.map((document) => document.data() as CategoryGroup);
+    console.log(`Loaded ${categories.length} category groups`);
+    return categories;
+  } catch (error) {
+    console.error('Failed to load categories:', error);
+    return [];
   }
 };
 

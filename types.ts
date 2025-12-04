@@ -6,6 +6,7 @@ export enum ColumnType {
   DATE_MANUAL = 'DATE_MANUAL', // Manually entered by user
   TIME_AUTO = 'TIME_AUTO',     // Automatically set to current time on row creation
   TIME_MANUAL = 'TIME_MANUAL', // Manually entered by user
+  CATEGORY = 'CATEGORY',       // Category selection with custom management
 }
 
 export interface Column {
@@ -14,6 +15,21 @@ export interface Column {
   type: ColumnType;
   width: number;
   isHidden?: boolean;
+  categoryId?: string; // For CATEGORY type columns, reference to the category group
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  color?: string; // Hex color code
+}
+
+export interface CategoryGroup {
+  id: string;
+  name: string; // Column name
+  columnId: string; // Reference to the column
+  tableId: string; // Reference to the table
+  items: CategoryItem[];
 }
 
 export interface Reply {
@@ -287,6 +303,11 @@ const validators: Record<ColumnType, (value: string) => ValidatorResult> = {
       value: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
     };
   },
+
+  [ColumnType.CATEGORY]: (value: string): ValidatorResult => ({
+    isValid: true,
+    value: value || '',
+  }),
 };
 
 export function validateCSVData(csvRows: string[][], tableColumns: Column[]): ValidationResult {

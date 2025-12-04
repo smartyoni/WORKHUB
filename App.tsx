@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
-import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, ValidationResult, parseCSV, validateCSVData } from './types';
-import { initDB as initFirebaseDB, saveBookmarks, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase } from './firebase';
+import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, ValidationResult, parseCSV, validateCSVData, CategoryGroup, CategoryItem } from './types';
+import { initDB as initFirebaseDB, saveBookmarks, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase, migrateTableNameToTODAY, saveCategories } from './firebase';
 import {
   Plus,
   Search,
@@ -126,7 +126,6 @@ const initialTablesUnsorted: TableDefinition[] = [
       'col-1': `2025-12-${String(2 - Math.floor(i / 2)).padStart(2, '0')}`,
       'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
       'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
-      _memo: '',
       _checklists: [],
     })),
   },
@@ -139,6 +138,7 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<BookmarkGroup[]>([]);
   const [tables, setTables] = useState<TableDefinition[]>([]);
   const [customFilters, setCustomFilters] = useState<CustomFilter[]>([]);
+  const [categories, setCategories] = useState<CategoryGroup[]>([]);
   const [isDBLoaded, setIsDBLoaded] = useState(false);
   const [todayTableId, setTodayTableId] = useState<string | null>(null);
   const [activeTableId, setActiveTableId] = useState<string>(() => {
@@ -186,6 +186,9 @@ export default function App() {
 
   // --- TODAY TABLE DATE FILTER STATE ---
   const [activeDateFilter, setActiveDateFilter] = useState<string | null>(null);
+
+  // --- CATEGORY FILTER STATE ---
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<{ columnId: string; categoryName: string } | null>(null);
 
   // Filter Creation Form State
   const [newFilterName, setNewFilterName] = useState('');
@@ -288,6 +291,10 @@ export default function App() {
     const loadDataFromFirebase = async () => {
       try {
         await initFirebaseDB(); // Firebase 초기화
+
+        // 테이블 이름 마이그레이션 (오늘기록 → TODAY)
+        await migrateTableNameToTODAY();
+
         const firebaseData = await loadAllDataFromFirebase();
 
         // 데이터 마이그레이션 헬퍼 함수
@@ -352,6 +359,7 @@ export default function App() {
         setBookmarks(migratedBookmarks);
 
         setCustomFilters(firebaseData.filters || []);
+        setCategories(firebaseData.categories || []);
 
         // ✅ 데이터 소스 결정 (초기값 vs 실제 데이터)
         const hasRealData = firebaseData.tables.length > 0 || firebaseData.bookmarks.length > 0;
@@ -414,6 +422,8 @@ export default function App() {
   useEffect(() => {
     setIsDeleteLocked(true);
     setActiveFilterId(null);
+    setActiveDateFilter(null);
+    setActiveCategoryFilter(null);
     localStorage.setItem('activeTableId', activeTableId);
   }, [activeTableId]);
 
@@ -470,22 +480,7 @@ export default function App() {
     return evaluateOperator(value, condition.operator, condValue);
   };
 
-  const evaluateMemoFilter = (row: RowData, condition: FilterCondition): boolean => {
-    const memo = row._memo || '';
-
-    switch (condition.operator) {
-      case 'contains':
-        return memo.toLowerCase().includes(condition.value.toLowerCase());
-      case 'isEmpty':
-        return memo === '';
-      case 'isNotEmpty':
-        return memo !== '';
-      default:
-        return true;
-    }
-  };
-
-  const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): boolean => {
+const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): boolean => {
     const checklists = row._checklists || [];
 
     switch (condition.operator) {
@@ -573,8 +568,6 @@ export default function App() {
                       switch (migratedCondition.target.type) {
                           case 'column':
                               return evaluateColumnFilter(row, migratedCondition);
-                          case 'memo':
-                              return evaluateMemoFilter(row, migratedCondition);
                           case 'checklist':
                               return evaluateChecklistFilter(row, migratedCondition);
                           case 'reply':
@@ -592,10 +585,15 @@ export default function App() {
           rows = rows.filter(row => row['col-1'] === activeDateFilter);
       }
 
+      // Apply category filter
+      if (activeCategoryFilter && activeTable) {
+          rows = rows.filter(row => row[activeCategoryFilter.columnId] === activeCategoryFilter.categoryName);
+      }
+
       return rows;
   };
 
-  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeDateFilter, activeTableId]);
+  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeDateFilter, activeTableId, activeCategoryFilter]);
 
   // --- AUTO SAVE TO FIREBASE ---
   // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
@@ -620,6 +618,13 @@ export default function App() {
       saveFilters(customFilters).catch(error => console.error('Failed to save filters to Firebase:', error));
     }
   }, [customFilters, isDBLoaded, dataSource]);
+
+  // Save categories to Firebase whenever they change
+  useEffect(() => {
+    if (isDBLoaded && dataSource === 'loaded') {
+      saveCategories(categories).catch(error => console.error('Failed to save categories to Firebase:', error));
+    }
+  }, [categories, isDBLoaded, dataSource]);
 
   const openFilterModal = () => {
       setNewFilterName('');
@@ -1418,6 +1423,8 @@ export default function App() {
                   tableName={activeTable.name}
                   row={selectedRow}
                   columns={activeTable.columns}
+                  categories={categories}
+                  setCategories={setCategories}
                   isOpen={isDetailPanelModal}
                   onClose={() => {
                     setIsDetailPanelModal(false);
@@ -1494,6 +1501,7 @@ export default function App() {
                                 <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
                                 <option value={ColumnType.TIME_AUTO}>자동 시간</option>
                                 <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
+                                <option value={ColumnType.CATEGORY}>카테고리</option>
                             </select>
                         </div>
                     </div>
@@ -1643,6 +1651,41 @@ export default function App() {
                 })()}
               </>
             )}
+
+            {/* Category Filter Section */}
+            {(() => {
+              const categoryColumns = activeTable?.columns.filter(col => col.type === ColumnType.CATEGORY) || [];
+              if (categoryColumns.length === 0) return null;
+
+              return categoryColumns.map(col => {
+                const categoryGroup = categories.find(c => c.columnId === col.id);
+                if (!categoryGroup || categoryGroup.items.length === 0) return null;
+
+                return (
+                  <div key={col.id} className="mt-4 pt-2 border-t border-gray-100">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">
+                      {col.name}
+                    </h3>
+                    {categoryGroup.items.map((item) => (
+                      <SideMenuItem
+                        key={item.id}
+                        icon={LayoutGrid}
+                        label={item.name}
+                        count={activeTable?.rows.filter(r => r[col.id] === item.name).length || 0}
+                        active={activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === item.name}
+                        onClick={() => {
+                          if (activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === item.name) {
+                            setActiveCategoryFilter(null);
+                          } else {
+                            setActiveCategoryFilter({ columnId: col.id, categoryName: item.name });
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                );
+              });
+            })()}
           </div>
         </aside>
 
@@ -1852,6 +1895,8 @@ export default function App() {
             tableName={activeTable?.name || ''}
             columns={visibleColumns}
             row={activeTable?.rows.find(r => r.id === selectedRowId) || null}
+            categories={categories}
+            setCategories={setCategories}
             isOpen={!!selectedRowId}
             onClose={() => setSelectedRowId(null)}
             onUpdate={updateRow}
@@ -1984,9 +2029,10 @@ export default function App() {
                                     <option value={ColumnType.DATE_MANUAL}>날짜 (직접)</option>
                                     <option value={ColumnType.TIME_AUTO}>시간 (자동)</option>
                                     <option value={ColumnType.TIME_MANUAL}>시간 (직접)</option>
+                                    <option value={ColumnType.CATEGORY}>카테고리</option>
                                 </select>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     placeholder="너비(px)"
                                     className="w-20 px-3 py-2 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm"
                                     value={col.width}
@@ -2086,6 +2132,7 @@ export default function App() {
                                 <option value={ColumnType.DATE_MANUAL}>날짜 (직접)</option>
                                 <option value={ColumnType.TIME_AUTO}>시간 (자동)</option>
                                 <option value={ColumnType.TIME_MANUAL}>시간 (직접)</option>
+                                <option value={ColumnType.CATEGORY}>카테고리</option>
                             </select>
                       </div>
                   </div>
@@ -2365,6 +2412,7 @@ export default function App() {
                               <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
                               <option value={ColumnType.TIME_AUTO}>자동 시간</option>
                               <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
+                              <option value={ColumnType.CATEGORY}>카테고리</option>
                           </select>
                       </div>
                   </div>

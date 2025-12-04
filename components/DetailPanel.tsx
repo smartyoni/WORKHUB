@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RowData, Column, ChecklistItem, Reply, ColumnType } from '../types';
-import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem } from '../types';
+import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 
 interface DetailPanelProps {
   tableName: string;
   row: RowData | null;
   columns: Column[];
+  categories: CategoryGroup[];
+  setCategories: (categories: CategoryGroup[]) => void;
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedRow: RowData) => void;
@@ -20,6 +22,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   tableName,
   row,
   columns,
+  categories,
+  setCategories,
   isOpen,
   onClose,
   onUpdate,
@@ -31,18 +35,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 }) => {
   const [localRow, setLocalRow] = useState<RowData | null>(null);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
-  const [isEditingMemo, setIsEditingMemo] = useState(false);
-  const [isMemoExpanded, setIsMemoExpanded] = useState(false);
 
   // Checklist State
   const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
   const [newChecklistText, setNewChecklistText] = useState('');
 
+  // Category Management State
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [currentEditingCategoryColumn, setCurrentEditingCategoryColumn] = useState<Column | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
   useEffect(() => {
     setLocalRow(row);
     setIsEditingInfo(false);
-    setIsEditingMemo(false);
-    setIsMemoExpanded(false);
     setEditingChecklistId(null);
     setNewChecklistText('');
   }, [row]);
@@ -59,6 +64,62 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       onUpdate(localRow);
       setIsEditingInfo(false);
     }
+  };
+
+  // Category Management Functions
+  const getCategoryGroup = (columnId: string): CategoryGroup | undefined => {
+    return categories.find(c => c.columnId === columnId);
+  };
+
+  const addCategory = (columnId: string, categoryName: string) => {
+    if (!categoryName.trim()) return;
+
+    const categoryGroup = getCategoryGroup(columnId);
+    if (categoryGroup) {
+      const newItem: CategoryItem = {
+        id: `cat-${Date.now()}`,
+        name: categoryName.trim(),
+        color: '#E5E7EB'
+      };
+      setCategories(
+        categories.map(c =>
+          c.columnId === columnId
+            ? { ...c, items: [...c.items, newItem] }
+            : c
+        )
+      );
+    }
+    setNewCategoryName('');
+  };
+
+  const deleteCategory = (columnId: string, categoryId: string) => {
+    setCategories(
+      categories.map(c =>
+        c.columnId === columnId
+          ? { ...c, items: c.items.filter(item => item.id !== categoryId) }
+          : c
+      )
+    );
+  };
+
+  const openCategoryManager = (col: Column) => {
+    const categoryGroup = getCategoryGroup(col.id);
+    if (!categoryGroup) {
+      // Create new category group if it doesn't exist
+      setCategories([
+        ...categories,
+        {
+          id: `catgroup-${col.id}`,
+          name: col.name,
+          columnId: col.id,
+          tableId: tableName,
+          items: []
+        }
+      ]);
+    }
+    setCurrentEditingCategoryColumn(col);
+    setIsEditingCategory(true);
+    setNewCategoryName('');
   };
 
   const getInputType = (type: ColumnType) => {
@@ -134,7 +195,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       <div className="w-full flex flex-col h-screen bg-white overflow-hidden">
         {/* Mobile Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10 shrink-0">
-          <h2 className="text-base font-bold text-gray-800"></h2>
+          <h2 className="text-base font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
           <div className="flex items-center gap-0 ml-auto">
             <button
               onClick={() => onDeleteRow(localRow.id)}
@@ -261,59 +322,63 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               )}
             </div>
 
-            <div className="space-y-0.5 text-xs">
-              {columns.map((col) => (
-                <div key={col.id} className="flex flex-wrap gap-2 items-start">
-                  <span className="text-gray-800 font-bold whitespace-nowrap">{col.name}:</span>
-                  {isEditingInfo ? (
-                    <input
-                      type={getInputType(col.type)}
-                      value={localRow[col.id] || ''}
-                      onChange={(e) => handleInfoChange(col.id, e.target.value)}
-                      className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
-                    />
-                  ) : (
-                    <span className="text-gray-800 break-words flex-1">
-                      {localRow[col.id] || '-'}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+            <div className="space-y-1 text-xs">
+              {columns.map((col) => {
+                const categoryGroup = getCategoryGroup(col.id);
+                const isCategoryType = col.type === ColumnType.CATEGORY;
 
-          {/* Divider */}
-          <div className="h-1 bg-green-500 rounded-full"></div>
-
-          {/* Memo */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-bold text-gray-700">메모</h3>
-            <div
-              className={`w-full p-3 rounded-md text-sm leading-relaxed border transition-all ${
-                isEditingMemo
-                  ? 'border-orange-400 bg-orange-50 ring-1 ring-orange-200'
-                  : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'
-              }`}
-              onDoubleClick={() => setIsEditingMemo(true)}
-            >
-              {isEditingMemo ? (
-                <textarea
-                  autoFocus
-                  rows={6}
-                  className="w-full bg-transparent outline-none resize-none block text-sm"
-                  value={localRow._memo}
-                  onChange={(e) => setLocalRow({ ...localRow, _memo: e.target.value })}
-                  onBlur={() => {
-                    setIsEditingMemo(false);
-                    onUpdate({ ...localRow });
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <div className="text-gray-700 whitespace-pre-wrap line-clamp-4">
-                  {localRow._memo || <span className="text-gray-400 text-xs italic">더블클릭하여 메모를 입력하세요...</span>}
-                </div>
-              )}
+                return (
+                  <div key={col.id} className="flex flex-wrap gap-2 items-start">
+                    <span className="text-gray-800 font-bold whitespace-nowrap">{col.name}:</span>
+                    {isCategoryType ? (
+                      <div className="flex-1 flex gap-1 items-center">
+                        {isEditingInfo ? (
+                          <>
+                            <select
+                              value={localRow[col.id] || ''}
+                              onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                              className="flex-1 p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                            >
+                              <option value="">선택 없음</option>
+                              {categoryGroup?.items.map((item) => (
+                                <option key={item.id} value={item.name}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => openCategoryManager(col)}
+                              className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
+                              title="카테고리 관리"
+                            >
+                              <Settings className="w-3 h-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-gray-800 break-words flex-1">
+                            {localRow[col.id] || '-'}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {isEditingInfo ? (
+                          <input
+                            type={getInputType(col.type)}
+                            value={localRow[col.id] || ''}
+                            onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                            className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                          />
+                        ) : (
+                          <span className="text-gray-800 break-words flex-1">
+                            {localRow[col.id] || '-'}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -330,7 +395,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-        <h2 className="text-lg font-bold text-gray-800">{tableName} 상세</h2>
+        <h2 className="text-lg font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
         <div className="flex items-center gap-2"> {/* Group delete and close buttons */}
             <button 
                 onClick={() => onDeleteRow(localRow.id)} // Call onDeleteRow with the current localRow.id
@@ -374,74 +439,66 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
 
           <div className="space-y-0.5 text-xs">
-            {columns.map((col) => (
-              <div key={col.id} className="grid grid-cols-3 gap-4 items-center">
-                <span className="text-gray-500 font-medium">{col.name}</span>
-                <div className="col-span-2">
-                  {isEditingInfo ? (
-                    <input
-                      type={getInputType(col.type)}
-                      value={localRow[col.id] || ''}
-                      onChange={(e) => handleInfoChange(col.id, e.target.value)}
-                      className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                    />
-                  ) : (
-                    <span className="text-gray-800 break-words block min-h-[1.5rem]">
-                      {localRow[col.id] || '-'}
-                    </span>
-                  )}
+            {columns.map((col) => {
+              const categoryGroup = getCategoryGroup(col.id);
+              const isCategoryType = col.type === ColumnType.CATEGORY;
+
+              return (
+                <div key={col.id} className="grid grid-cols-3 gap-4 items-center">
+                  <span className="text-gray-500 font-medium">{col.name}</span>
+                  <div className="col-span-2">
+                    {isCategoryType ? (
+                      <div className="flex gap-2 items-center">
+                        {isEditingInfo ? (
+                          <>
+                            <select
+                              value={localRow[col.id] || ''}
+                              onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                              className="flex-1 p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                            >
+                              <option value="">선택 없음</option>
+                              {categoryGroup?.items.map((item) => (
+                                <option key={item.id} value={item.name}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => openCategoryManager(col)}
+                              className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors shrink-0"
+                              title="카테고리 관리"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                            {localRow[col.id] || '-'}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {isEditingInfo ? (
+                          <input
+                            type={getInputType(col.type)}
+                            value={localRow[col.id] || ''}
+                            onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                            className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                        ) : (
+                          <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                            {localRow[col.id] || '-'}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {/* Removed the old justify-end div that contained the button */}
-        </div>
-
-        {/* Divider */}
-        <div className="h-1 bg-green-500 rounded-full"></div>
-
-        {/* Memo */}
-        <div className="space-y-3">
-          <div
-            className="flex items-center justify-between cursor-pointer group select-none"
-            onClick={() => setIsMemoExpanded(!isMemoExpanded)}
-          >
-            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-              <span className="w-1 h-4 bg-orange-400 rounded-full"></span>
-              메모
-            </h3>
-            <button className="text-gray-400 group-hover:text-gray-600 transition-colors">
-                {isMemoExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-          </div>
-
-          <div
-            className={`w-full p-3 rounded-md text-sm leading-relaxed border transition-all ${
-              isEditingMemo
-                ? 'border-orange-400 bg-orange-50 ring-1 ring-orange-200'
-                : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'
-            }`}
-            onDoubleClick={() => setIsEditingMemo(true)}
-          >
-            {isEditingMemo ? (
-              <textarea
-                autoFocus
-                rows={10}
-                className="w-full bg-transparent outline-none resize focus:ring-0 block"
-                value={localRow._memo}
-                onChange={(e) => setLocalRow({ ...localRow, _memo: e.target.value })}
-                onBlur={() => {
-                  setIsEditingMemo(false);
-                  onUpdate({ ...localRow });
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <div className={`text-gray-700 ${!isMemoExpanded ? 'line-clamp-2' : 'whitespace-pre-wrap'}`}>
-                {localRow._memo || <span className="text-gray-400 italic">더블클릭하여 메모를 입력하세요...</span>}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Checklist */}
@@ -539,6 +596,105 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
 
       </div>
+
+      {/* Category Management Modal */}
+      {isEditingCategory && currentEditingCategoryColumn && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800">
+                {currentEditingCategoryColumn.name} 관리
+              </h3>
+              <button
+                onClick={() => {
+                  setIsEditingCategory(false);
+                  setCurrentEditingCategoryColumn(null);
+                  setNewCategoryName('');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Add New Category */}
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">새로운 카테고리 추가</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="카테고리명을 입력하세요"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        addCategory(currentEditingCategoryColumn.id, newCategoryName);
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={() => addCategory(currentEditingCategoryColumn.id, newCategoryName)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Categories List */}
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">카테고리 목록</label>
+                <div className="space-y-1 max-h-96 overflow-y-auto">
+                  {getCategoryGroup(currentEditingCategoryColumn.id)?.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <div
+                          className="w-4 h-4 rounded-full border-2 border-gray-300"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-sm text-gray-800">{item.name}</span>
+                      </div>
+                      <button
+                        onClick={() => deleteCategory(currentEditingCategoryColumn.id, item.id)}
+                        className="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="카테고리 삭제"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {!getCategoryGroup(currentEditingCategoryColumn.id)?.items.length && (
+                    <div className="text-center py-4 text-gray-400 text-sm">
+                      추가된 카테고리가 없습니다
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setIsEditingCategory(false);
+                  setCurrentEditingCategoryColumn(null);
+                  setNewCategoryName('');
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
