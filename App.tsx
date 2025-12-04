@@ -454,7 +454,7 @@ export default function App() {
 
         // === DEBUG: TODAY Table Detection ===
         console.log('=== DEBUG: TODAY Table Detection ===');
-        console.log('  TODAY_TABLE_NAME:', TODAY_TABLE_NAME);
+        console.log('  TODAY_TABLE_NAMES:', TODAY_TABLE_NAMES);
         console.log('  Found todayTableId:', todayId);
         console.log('  activeTableId:', activeTableId);
 
