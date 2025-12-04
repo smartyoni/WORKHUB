@@ -187,6 +187,7 @@ export default function App() {
 
   // --- TODAY TABLE DATE FILTER STATE ---
   const [activeDateFilter, setActiveDateFilter] = useState<string | null>(null);
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
 
   // --- CATEGORY FILTER STATE ---
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<{ columnId: string; categoryName: string } | null>(null);
@@ -249,21 +250,13 @@ export default function App() {
   const currentTableFilters = customFilters.filter(f => f.tableId === activeTableId);
 
   // --- TODAY TABLE DATE HELPERS ---
-  const getTodayTableDates = (): { date: string; displayDate: string; count: number }[] => {
-    // === DEBUG: getTodayTableDates called ===
-    console.log('=== DEBUG: getTodayTableDates called ===');
-    console.log('  activeTable exists:', !!activeTable);
-    console.log('  todayTableId:', todayTableId);
-    console.log('  activeTableId:', activeTableId);
-    console.log('  Match?:', activeTableId === todayTableId);
-
+  const getTodayTableDates = (): {
+    recent: { date: string; displayDate: string; count: number }[];
+    monthGroups: { monthKey: string; monthDisplay: string; dates: { date: string; displayDate: string; count: number }[] }[];
+  } => {
     if (!activeTable || !todayTableId || activeTableId !== todayTableId) {
-      console.log('  -> Returning empty array (condition not met)');
-      return [];
+      return { recent: [], monthGroups: [] };
     }
-
-    console.log('  -> Processing dates...');
-    console.log('  Row count:', activeTable.rows.length);
 
     // Get all unique dates from col-1 and count them
     const dateMap = new Map<string, number>();
@@ -274,17 +267,79 @@ export default function App() {
       }
     });
 
-    // === DEBUG: Dates extracted ===
-    console.log('  Dates in rows:', Array.from(dateMap.keys()));
-
-    // Convert to array, sort by date descending (newest first), and format
-    return Array.from(dateMap.entries())
+    // Convert to array and format
+    const allDates = Array.from(dateMap.entries())
       .sort((a, b) => b[0].localeCompare(a[0]))
       .map(([dateStr, count]) => {
         const [year, month, day] = dateStr.split('-').map(Number);
         const displayDate = `${year}년 ${month}월 ${day}일`;
-        return { date: dateStr, displayDate, count };
+        return { date: dateStr, displayDate, count, year, month, day };
       });
+
+    // Get today's date
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayDate = new Date(todayStr);
+
+    // Separate recent (within 3 days) and older dates
+    const recent: typeof allDates = [];
+    const older: typeof allDates = [];
+
+    allDates.forEach(dateItem => {
+      const itemDate = new Date(`${dateItem.year}-${String(dateItem.month).padStart(2, '0')}-${String(dateItem.day).padStart(2, '0')}`);
+      const diffTime = todayDate.getTime() - itemDate.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+      // 최근 3일 (오늘, 어제, 그그제): diffDays가 0, 1, 2
+      if (diffDays >= 0 && diffDays <= 2) {
+        recent.push(dateItem);
+      } else {
+        older.push(dateItem);
+      }
+    });
+
+    // Sort recent dates: today first, then yesterday, then day before
+    recent.sort((a, b) => {
+      const aDate = new Date(`${a.year}-${String(a.month).padStart(2, '0')}-${String(a.day).padStart(2, '0')}`);
+      const bDate = new Date(`${b.year}-${String(b.month).padStart(2, '0')}-${String(b.day).padStart(2, '0')}`);
+      return bDate.getTime() - aDate.getTime();
+    });
+
+    // Group older dates by year-month
+    const monthMap = new Map<string, typeof older>();
+    older.forEach(dateItem => {
+      const monthKey = `${dateItem.year}-${String(dateItem.month).padStart(2, '0')}`;
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, []);
+      }
+      monthMap.get(monthKey)!.push(dateItem);
+    });
+
+    // Convert month groups to array and sort by date descending
+    const monthGroups = Array.from(monthMap.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([monthKey, dates]) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        const monthDisplay = `${year}년 ${month}월`;
+
+        // Sort dates within month by date descending
+        const sortedDates = dates.sort((a, b) => {
+          const aDate = new Date(`${a.year}-${String(a.month).padStart(2, '0')}-${String(a.day).padStart(2, '0')}`);
+          const bDate = new Date(`${b.year}-${String(b.month).padStart(2, '0')}-${String(b.day).padStart(2, '0')}`);
+          return bDate.getTime() - aDate.getTime();
+        });
+
+        return {
+          monthKey,
+          monthDisplay,
+          dates: sortedDates.map(d => ({ date: d.date, displayDate: d.displayDate, count: d.count }))
+        };
+      });
+
+    return {
+      recent: recent.map(d => ({ date: d.date, displayDate: d.displayDate, count: d.count })),
+      monthGroups
+    };
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -1624,29 +1679,81 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
             {/* TODAY Table: Date List */}
             {activeTableId === todayTableId && (
               <>
-                {/* Date List */}
+                {/* Recent 3 Days Section */}
                 {(() => {
-                  const dates = getTodayTableDates();
-                  console.log('=== DEBUG: Sidebar rendering TODAY table ===');
-                  console.log('  Date list length:', dates.length);
-                  console.log('  Dates:', dates);
+                  const { recent, monthGroups } = getTodayTableDates();
+
                   return (
                     <>
-                      {dates.length > 0 && (
+                      {/* 최근 3일 */}
+                      {recent.length > 0 && (
+                        <>
+                          <div className="mt-4 pt-2 border-t border-gray-100">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">최근 3일</h3>
+                          </div>
+                          {recent.map((dateItem) => (
+                            <SideMenuItem
+                              key={dateItem.date}
+                              icon={Calendar}
+                              label={dateItem.displayDate}
+                              count={dateItem.count}
+                              active={activeDateFilter === dateItem.date}
+                              onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                            />
+                          ))}
+                        </>
+                      )}
+
+                      {/* 월별 아코디언 */}
+                      {monthGroups.length > 0 && (
                         <div className="mt-4 pt-2 border-t border-gray-100">
-                          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">날짜</h3>
+                          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">이전 기록</h3>
+                          {monthGroups.map((monthGroup) => {
+                            const isExpanded = expandedMonths.has(monthGroup.monthKey);
+
+                            return (
+                              <div key={monthGroup.monthKey}>
+                                {/* Month Header (Accordion) */}
+                                <button
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedMonths);
+                                    if (isExpanded) {
+                                      newExpanded.delete(monthGroup.monthKey);
+                                    } else {
+                                      newExpanded.add(monthGroup.monthKey);
+                                    }
+                                    setExpandedMonths(newExpanded);
+                                  }}
+                                  className="w-full px-2 py-2 flex items-center gap-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                >
+                                  <ChevronRight
+                                    className={`w-4 h-4 transition-transform ${
+                                      isExpanded ? 'rotate-90' : ''
+                                    }`}
+                                  />
+                                  <span>{monthGroup.monthDisplay}</span>
+                                </button>
+
+                                {/* Dates within Month */}
+                                {isExpanded && (
+                                  <div className="pl-6 space-y-1">
+                                    {monthGroup.dates.map((dateItem) => (
+                                      <SideMenuItem
+                                        key={dateItem.date}
+                                        icon={Calendar}
+                                        label={dateItem.displayDate}
+                                        count={dateItem.count}
+                                        active={activeDateFilter === dateItem.date}
+                                        onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
-                      {dates.map((dateItem) => (
-                        <SideMenuItem
-                          key={dateItem.date}
-                          icon={Calendar}
-                          label={dateItem.displayDate}
-                          count={dateItem.count}
-                          active={activeDateFilter === dateItem.date}
-                          onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
-                        />
-                      ))}
                     </>
                   );
                 })()}
