@@ -189,6 +189,9 @@ export default function App() {
   const [activeDateFilter, setActiveDateFilter] = useState<string | null>(null);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
 
+  // --- MOBILE SIDEBAR STATE ---
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   // --- CATEGORY FILTER STATE ---
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<{ columnId: string; categoryName: string } | null>(null);
 
@@ -1468,11 +1471,15 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         </div>
 
         {/* Mobile Table Tab Bar */}
-        <div className="bg-white border-t border-gray-200 px-2 py-2 flex gap-1 overflow-x-auto">
+        <div className="bg-white border-t border-gray-200 px-2 py-2 flex gap-1 overflow-x-auto md:hidden">
           {tables.map(table => (
             <button
               key={table.id}
-              onClick={() => setActiveTableId(table.id)}
+              onClick={() => {
+                setActiveTableId(table.id);
+                // 모바일에서 테이블 탭 클릭 시 사이드바 펼치기
+                setIsMobileSidebarOpen(true);
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTableId === table.id
                   ? 'bg-blue-600 text-white'
@@ -1671,11 +1678,37 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
       {/* 2. Main Workspace Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        
-        {/* Left Sidebar (Filter) */}
-        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0">
+
+        {/* 모바일 사이드바 배경 오버레이 */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-30 md:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Left Sidebar (Filter) - 모바일에서는 오버레이 */}
+        <aside className={`
+          bg-white border-r border-gray-200 flex flex-col shrink-0
+          transition-all duration-300 ease-in-out
+          ${isMobileSidebarOpen ? 'w-64' : 'w-0'}
+          md:w-64 md:border-r md:border-gray-200
+          fixed md:static
+          h-full md:h-auto
+          z-40 md:z-auto
+          top-16 md:top-0
+          left-0 md:left-0
+        `}>
           <div className="p-4 flex items-center justify-between">
             <h2 className="font-bold text-gray-800">필터</h2>
+            {/* 모바일 닫기 버튼 */}
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="md:hidden text-gray-500 hover:text-gray-700"
+              title="사이드바 닫기"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
           
           <div className="flex-1 overflow-y-auto px-2 space-y-1">
