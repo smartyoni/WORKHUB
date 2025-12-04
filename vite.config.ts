@@ -60,39 +60,13 @@ export default defineConfig({
 
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          }
-        ],
+        runtimeCaching: [],
         navigateFallback: null,
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
+        cleanupOutdatedCaches: true
       },
 
       devOptions: {
-        enabled: false,  // 개발 중에는 PWA 비활성화 (Service Worker 캐시 에러 방지)
-        type: 'module'
+        enabled: false
       }
     })
   ],
