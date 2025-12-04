@@ -215,18 +215,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
 
         {/* Mobile Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        <div className="flex-1 overflow-hidden flex flex-col p-4">
 
           {/* Checklist */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-gray-700">
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <h3 className="text-sm font-bold text-gray-700 flex-shrink-0">
               체크리스트
               <span className="text-xs font-normal text-gray-400 ml-1">
                 ({localRow._checklists.filter(c => c.isChecked).length}/{localRow._checklists.length})
               </span>
             </h3>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-3 flex-shrink-0">
               <textarea
                 placeholder="항목 추가 (Ctrl+Enter로 추가)"
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
@@ -242,13 +242,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               />
               <button
                 onClick={addChecklist}
-                className="p-2 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600"
+                className="p-2 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600 flex-shrink-0"
               >
                 <Plus className="w-3 h-3" />
               </button>
             </div>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-2 overflow-y-auto flex-1 mt-3">
               {localRow._checklists.map((item) => {
                 return (
                   <div key={item.id} className="group bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs space-y-2">
@@ -302,7 +302,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
 
           {/* Basic Info */}
-          <div className="space-y-1">
+          <div className="space-y-1 flex-shrink-0 mt-5 border-t border-gray-100 pt-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-gray-700">기본 정보</h3>
               {isEditingInfo ? (
@@ -411,10 +411,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
-        
+      <div className="flex-1 overflow-hidden flex flex-col p-6">
+
         {/* Basic Info */}
-        <div className="space-y-1">
+        <div className="space-y-1 flex-shrink-0">
           <div className="flex items-center justify-between border-b border-gray-200 pb-2"> {/* This is the container for h3 and the button */}
             <h3 className="text-xs font-bold text-gray-700 flex items-center gap-2">
               <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
@@ -502,8 +502,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
 
         {/* Checklist */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="flex-1 overflow-hidden flex flex-col mt-8">
+          <div className="flex items-center justify-between flex-shrink-0">
             <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
               <span className="w-1 h-4 bg-green-500 rounded-full"></span>
               체크리스트
@@ -514,7 +514,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
 
           {/* Add Checklist Input */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-3 flex-shrink-0">
             <textarea
               placeholder="새로운 항목 추가... (Ctrl+Enter로 추가, Shift+Enter로 줄바꿈)"
               className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
@@ -530,14 +530,14 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             />
             <button
               onClick={addChecklist}
-              className="px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600 transition-colors"
+              className="px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600 transition-colors flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
             </button>
           </div>
 
           {/* Checklists List */}
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-2 overflow-y-auto flex-1 mt-3">
             {localRow._checklists.map((item) => {
               return (
                 <div key={item.id} className="group bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs space-y-2">
