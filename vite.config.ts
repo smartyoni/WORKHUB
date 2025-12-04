@@ -22,16 +22,16 @@ export default defineConfig({
       },
       registerType: 'prompt',
       workbox: {
-        // 핵심: precache 비활성화로 Response 복제 문제 완전 해결
         globPatterns: [],
-
+        // NavigationRoute 비활성화로 Response 복제 문제 해결
+        navigateFallback: undefined,
         runtimeCaching: [
+          // 외부 CDN: 캐시
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
+            handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
-              networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 31536000,
@@ -43,29 +43,15 @@ export default defineConfig({
           },
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'NetworkFirst',
+            handler: 'CacheFirst',
             options: {
               cacheName: 'gstatic-fonts-cache',
-              networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 31536000,
               },
               cacheableResponse: {
                 statuses: [0, 200],
-              },
-            },
-          },
-          // HTML/JS/CSS는 네트워크 우선
-          {
-            urlPattern: /\.(js|css|html)$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'app-cache',
-              networkTimeoutSeconds: 3,
-              expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 86400,
               },
             },
           },
