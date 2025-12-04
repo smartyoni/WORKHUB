@@ -89,7 +89,7 @@ export default defineConfig({
       },
 
       devOptions: {
-        enabled: true,
+        enabled: false,  // 개발 중에는 PWA 비활성화 (Service Worker 캐시 에러 방지)
         type: 'module'
       }
     })
