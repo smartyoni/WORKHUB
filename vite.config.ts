@@ -69,8 +69,7 @@ export default defineConfig({
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365
-              },
-              cacheableResponse: { statuses: [0, 200] }
+              }
             }
           },
           {
@@ -81,12 +80,12 @@ export default defineConfig({
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365
-              },
-              cacheableResponse: { statuses: [0, 200] }
+              }
             }
           }
         ],
-        navigateFallback: null
+        navigateFallback: null,
+        cleanupOutdatedCaches: true
       },
 
       devOptions: {

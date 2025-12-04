@@ -126,6 +126,7 @@ const initialTablesUnsorted: TableDefinition[] = [
       'col-1': `2025-12-${String(2 - Math.floor(i / 2)).padStart(2, '0')}`,
       'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
       'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
+      _memo: '',
       _checklists: [],
     })),
   },
