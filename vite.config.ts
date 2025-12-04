@@ -22,7 +22,9 @@ export default defineConfig({
       },
       registerType: 'prompt',
       workbox: {
-        // 네트워크 우선 전략: 온라인 중심, Response 복제 문제 없음
+        // 핵심: precache 비활성화로 Response 복제 문제 완전 해결
+        globPatterns: [],
+
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -51,6 +53,19 @@ export default defineConfig({
               },
               cacheableResponse: {
                 statuses: [0, 200],
+              },
+            },
+          },
+          // HTML/JS/CSS는 네트워크 우선
+          {
+            urlPattern: /\.(js|css|html)$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'app-cache',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 86400,
               },
             },
           },
