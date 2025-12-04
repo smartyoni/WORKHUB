@@ -37,5 +37,27 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Service Worker 강제 제거 스크립트 -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker unregistered:', registration);
+          }
+        });
+      }
+
+      // 캐시 완전 삭제
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName);
+            console.log('Cache deleted:', cacheName);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
