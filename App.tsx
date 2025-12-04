@@ -100,15 +100,15 @@ const initialBookmarkGroups: BookmarkGroup[] = [
 ];
 
 // --- CONSTANTS ---
-const TODAY_TABLE_NAME = 'TODAY';
+const TODAY_TABLE_NAMES = ['TODAY', '오늘 기록'];
 
 const getTodayTableId = (tables: TableDefinition[]): string | null => {
-  return tables.find(t => t.name === TODAY_TABLE_NAME)?.id || null;
+  return tables.find(t => TODAY_TABLE_NAMES.includes(t.name))?.id || null;
 };
 
 const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] => {
-  const todayTable = tables.find(t => t.name === TODAY_TABLE_NAME);
-  const otherTables = tables.filter(t => t.name !== TODAY_TABLE_NAME);
+  const todayTable = tables.find(t => TODAY_TABLE_NAMES.includes(t.name));
+  const otherTables = tables.filter(t => !TODAY_TABLE_NAMES.includes(t.name));
   return todayTable ? [todayTable, ...otherTables] : tables;
 };
 
@@ -254,18 +254,31 @@ export default function App() {
     recent: { date: string; displayDate: string; count: number }[];
     monthGroups: { monthKey: string; monthDisplay: string; dates: { date: string; displayDate: string; count: number }[] }[];
   } => {
+    // DEBUG 로그
+    console.log('🔍 getTodayTableDates 실행');
+    console.log('  activeTable:', activeTable?.name, activeTable?.id);
+    console.log('  todayTableId:', todayTableId);
+    console.log('  activeTableId:', activeTableId);
+    console.log('  일치?:', activeTableId === todayTableId);
+
     if (!activeTable || !todayTableId || activeTableId !== todayTableId) {
+      console.log('  ❌ 조건 불일치 - 빈 배열 반환');
       return { recent: [], monthGroups: [] };
     }
+
+    console.log('  ✅ 조건 충족 - 데이터 처리 시작');
+    console.log('  전체 행 개수:', activeTable.rows.length);
 
     // Get all unique dates from col-1 and count them
     const dateMap = new Map<string, number>();
     activeTable.rows.forEach(row => {
       const dateStr = row['col-1'] as string;
+      console.log('  행 데이터:', { 'col-1': dateStr, 'col-2': row['col-2'] });
       if (dateStr) {
         dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
       }
     });
+    console.log('  수집된 날짜 맵:', Array.from(dateMap.entries()));
 
     // Convert to array and format
     const allDates = Array.from(dateMap.entries())
