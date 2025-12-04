@@ -178,6 +178,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setIsConfirmModalOpen(true);
   };
 
+  // Auto-adjust textarea height
+  const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 400) + 'px';
+  };
+
   const updateChecklistText = (id: string, value: string) => {
     if (!localRow) return;
     const updatedChecklists = localRow._checklists.map(item =>
@@ -268,7 +275,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         {editingChecklistId === item.id ? (
                             <textarea
                                 autoFocus
-                                className="w-full text-base font-semibold border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap"
+                                className="w-full text-base font-semibold border-b border-blue-400 outline-none pb-0.5 resize-none whitespace-pre-wrap min-h-[100px]"
                                 rows={2}
                                 defaultValue={item.text}
                                 onBlur={(e) => updateChecklistText(item.id, e.target.value)}
@@ -277,6 +284,12 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                                         e.preventDefault();
                                         updateChecklistText(item.id, e.currentTarget.value);
                                     }
+                                }}
+                                onChange={(e) => adjustTextareaHeight(e.target)}
+                                ref={(el) => {
+                                  if (el && editingChecklistId === item.id) {
+                                    setTimeout(() => adjustTextareaHeight(el), 0);
+                                  }
                                 }}
                             />
                         ) : (
@@ -556,7 +569,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       {editingChecklistId === item.id ? (
                         <textarea
                           autoFocus
-                          className="w-full px-2 py-1 border border-green-500 rounded text-sm focus:outline-none bg-white resize-none whitespace-pre-wrap"
+                          className="w-full px-2 py-1 border border-green-500 rounded text-sm focus:outline-none bg-white resize-none whitespace-pre-wrap min-h-[100px]"
                           rows={3}
                           defaultValue={item.text}
                           onBlur={(e) => {
@@ -568,6 +581,12 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                               e.preventDefault();
                               updateChecklistText(item.id, e.currentTarget.value);
                               setEditingChecklistId(null);
+                            }
+                          }}
+                          onChange={(e) => adjustTextareaHeight(e.target)}
+                          ref={(el) => {
+                            if (el && editingChecklistId === item.id) {
+                              setTimeout(() => adjustTextareaHeight(el), 0);
                             }
                           }}
                         />
