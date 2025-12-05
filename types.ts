@@ -6,6 +6,8 @@ export enum ColumnType {
   DATE_MANUAL = 'DATE_MANUAL', // Manually entered by user
   TIME_AUTO = 'TIME_AUTO',     // Automatically set to current time on row creation
   TIME_MANUAL = 'TIME_MANUAL', // Manually entered by user
+  YMD_AUTO = 'YMD_AUTO',       // Automatically set to current year-month-day on row creation
+  YMD_MANUAL = 'YMD_MANUAL',   // Manually entered year-month-day by user
   CATEGORY = 'CATEGORY',       // Category selection with custom management
 }
 
@@ -302,6 +304,19 @@ const validators: Record<ColumnType, (value: string) => ValidatorResult> = {
       isValid: true,
       value: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
     };
+  },
+
+  [ColumnType.YMD_AUTO]: (): ValidatorResult => ({
+    isValid: true,
+    value: new Date().toISOString().split('T')[0],
+  }),
+
+  [ColumnType.YMD_MANUAL]: (value: string): ValidatorResult => {
+    const parsed = parseFlexibleDate(value);
+    if (!parsed) {
+      return { isValid: false, error: '년월일 형식이 올바르지 않습니다' };
+    }
+    return { isValid: true, value: parsed };
   },
 
   [ColumnType.CATEGORY]: (value: string): ValidatorResult => ({

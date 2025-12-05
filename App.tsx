@@ -29,7 +29,8 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  Calendar
+  Calendar,
+  Menu
 } from 'lucide-react';
 
 // --- 색상 팔레트 정의 (선명하고 생생한 색상) ---
@@ -240,6 +241,9 @@ export default function App() {
   const [touchStartX, setTouchStartX] = useState(0);
   const [isDetailPanelModal, setIsDetailPanelModal] = useState(false);
 
+  // --- CURRENT TIME STATE ---
+  const [currentTime, setCurrentTime] = useState(new Date());
+
   // --- CSV UPLOAD STATE ---
   const [isCSVUploadModalOpen, setIsCSVUploadModalOpen] = useState(false);
   const [csvValidationResult, setCSVValidationResult] = useState<ValidationResult | null>(null);
@@ -356,6 +360,27 @@ export default function App() {
       recent: recent.map(d => ({ date: d.date, displayDate: d.displayDate, count: d.count })),
       monthGroups
     };
+  };
+
+  // --- CURRENT TIME UPDATE ---
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 날짜와 시간 포맷 함수
+  const formatCurrentDateTime = (): string => {
+    const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+    const year = currentTime.getFullYear();
+    const month = currentTime.getMonth() + 1;
+    const date = currentTime.getDate();
+    const dayName = days[currentTime.getDay()];
+    const hours = String(currentTime.getHours()).padStart(2, '0');
+    const minutes = String(currentTime.getMinutes()).padStart(2, '0');
+
+    return `${year}년 ${month}월 ${date}일 ${hours}:${minutes} ${dayName}`;
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -1379,48 +1404,198 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
       <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans overflow-hidden">
 
         {/* Mobile Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold">업무통합관리</h1>
-          <div className="flex items-center gap-2">
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-2">
+          <button
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="p-2 hover:bg-gray-100 rounded-lg shrink-0"
+            title="필터 메뉴"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="text-red-600 font-bold text-xs whitespace-nowrap overflow-hidden text-center flex-1">
+            {formatCurrentDateTime()}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setIsCSVUploadModalOpen(true)}
-              className="p-2 hover:bg-green-100 rounded-lg text-green-600"
-              title="CSV 업로드"
+              onClick={() => setIsRowModalOpen(true)}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+              title="행 추가"
             >
-              <Upload className="w-5 h-5" />
+              행추가
             </button>
             <button
-              onClick={() => setIsTableModalOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-              title="테이블 추가"
+              onClick={() => setIsAddColumnModalOpen(true)}
+              className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors"
+              title="컬럼 추가"
             >
-              <Plus className="w-5 h-5" />
+              컬럼추가
             </button>
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="overflow-hidden flex flex-col flex-1">
-          {/* Table Actions Toolbar */}
-          {activeTable && !isDetailPanelModal && (
-            <div className="bg-white border-b border-gray-200 px-4 py-3 flex gap-2 flex-wrap">
+        {/* Mobile Sidebar Overlay */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Mobile Sidebar Modal */}
+        {isMobileSidebarOpen && (
+          <aside
+            className="fixed top-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 z-50 overflow-y-auto"
+            style={{
+              top: '56px',
+              height: 'calc(100vh - 56px - 48px)'
+            }}
+          >
+            <div className="p-4 flex items-center justify-between border-b border-gray-200">
+              <h2 className="font-bold text-gray-800">필터</h2>
               <button
-                onClick={openRowModal}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+                title="사이드바 닫기"
               >
-                <Plus className="w-4 h-4" />
-                행추가
-              </button>
-              <button
-                onClick={() => setIsAddColumnModalOpen(true)}
-                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                컬럼추가
+                <X className="w-5 h-5" />
               </button>
             </div>
-          )}
 
+            <div className="flex-1 overflow-y-auto px-2 space-y-1 py-4">
+              <SideMenuItem
+                  icon={LayoutGrid}
+                  label="전체"
+                  count={activeTable?.rows.length || 0}
+                  active={activeDateFilter === null}
+                  onClick={() => {
+                    setActiveDateFilter(null);
+                  }}
+              />
+
+              {/* TODAY Table: Date List */}
+              {activeTableId === todayTableId && (
+                <>
+                  {/* Recent 3 Days Section */}
+                  {(() => {
+                    const { recent, monthGroups } = getTodayTableDates();
+
+                    return (
+                      <>
+                        {/* 최근 3일 */}
+                        {recent.length > 0 && (
+                          <>
+                            <div className="mt-4 pt-2 border-t border-gray-100">
+                              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">최근 3일</h3>
+                            </div>
+                            {recent.map((dateItem) => (
+                              <SideMenuItem
+                                key={dateItem.date}
+                                icon={Calendar}
+                                label={dateItem.displayDate}
+                                count={dateItem.count}
+                                active={activeDateFilter === dateItem.date}
+                                onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                              />
+                            ))}
+                          </>
+                        )}
+
+                        {/* 월별 아코디언 */}
+                        {monthGroups.length > 0 && (
+                          <div className="mt-4 pt-2 border-t border-gray-100">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">이전 기록</h3>
+                            {monthGroups.map((monthGroup) => {
+                              const isExpanded = expandedMonths.has(monthGroup.monthKey);
+
+                              return (
+                                <div key={monthGroup.monthKey}>
+                                  {/* Month Header (Accordion) */}
+                                  <button
+                                    onClick={() => {
+                                      const newExpanded = new Set(expandedMonths);
+                                      if (isExpanded) {
+                                        newExpanded.delete(monthGroup.monthKey);
+                                      } else {
+                                        newExpanded.add(monthGroup.monthKey);
+                                      }
+                                      setExpandedMonths(newExpanded);
+                                    }}
+                                    className="w-full px-2 py-2 flex items-center gap-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                  >
+                                    <ChevronRight
+                                      className={`w-4 h-4 transition-transform ${
+                                        isExpanded ? 'rotate-90' : ''
+                                      }`}
+                                    />
+                                    <span>{monthGroup.monthDisplay}</span>
+                                  </button>
+
+                                  {/* Dates within Month */}
+                                  {isExpanded && (
+                                    <div className="pl-6 space-y-1">
+                                      {monthGroup.dates.map((dateItem) => (
+                                        <SideMenuItem
+                                          key={dateItem.date}
+                                          icon={Calendar}
+                                          label={dateItem.displayDate}
+                                          count={dateItem.count}
+                                          active={activeDateFilter === dateItem.date}
+                                          onClick={() => setActiveDateFilter(activeDateFilter === dateItem.date ? null : dateItem.date)}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+
+              {/* Category Filter Section */}
+              {(() => {
+                const categoryColumns = activeTable?.columns.filter(col => col.type === ColumnType.CATEGORY) || [];
+                if (categoryColumns.length === 0) return null;
+
+                return categoryColumns.map(col => {
+                  const categoryGroup = categories.find(c => c.columnId === col.id);
+                  if (!categoryGroup || categoryGroup.items.length === 0) return null;
+
+                  return (
+                    <div key={col.id} className="mt-4 pt-2 border-t border-gray-100">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">
+                        {col.name}
+                      </h3>
+                      {categoryGroup.items.map((item) => (
+                        <SideMenuItem
+                          key={item.id}
+                          icon={LayoutGrid}
+                          label={item.name}
+                          count={activeTable?.rows.filter(r => r[col.id] === item.name).length || 0}
+                          active={activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === item.name}
+                          onClick={() => {
+                            if (activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === item.name) {
+                              setActiveCategoryFilter(null);
+                            } else {
+                              setActiveCategoryFilter({ columnId: col.id, categoryName: item.name });
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </aside>
+        )}
+
+        {/* Main Content Area */}
+        <div className="overflow-hidden flex flex-col flex-1">
           {/* Table Content */}
           <div className="w-full overflow-x-auto overflow-y-auto flex-1">
             {activeTable && (
@@ -1577,6 +1752,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
                                 <option value={ColumnType.TIME_AUTO}>자동 시간</option>
                                 <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
+                                <option value={ColumnType.YMD_AUTO}>자동년월일</option>
+                                <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
                                 <option value={ColumnType.CATEGORY}>카테고리</option>
                             </select>
                         </div>
@@ -1614,10 +1791,11 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
                   <div className="p-6 overflow-y-auto space-y-5">
                       {activeTable.columns.filter(c => !c.isHidden).map((col) => {
-                          const isAuto = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.TIME_AUTO;
+                          const isAuto = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.TIME_AUTO || col.type === ColumnType.YMD_AUTO;
                           const isDate = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.DATE_MANUAL;
                           const isTime = col.type === ColumnType.TIME_AUTO || col.type === ColumnType.TIME_MANUAL;
-                          const inputType = isDate ? 'date' : isTime ? 'time' : col.type === ColumnType.NUMBER ? 'number' : 'text';
+                          const isYMD = col.type === ColumnType.YMD_AUTO || col.type === ColumnType.YMD_MANUAL;
+                          const inputType = isDate ? 'date' : isTime ? 'time' : isYMD ? 'date' : col.type === ColumnType.NUMBER ? 'number' : 'text';
 
                           return (
                               <div key={col.id}>
@@ -1662,7 +1840,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
   // --- DESKTOP LAYOUT ---
   return (
-    <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans">
+    <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans overflow-hidden">
       <InstallPrompt />
 
       {/* 1. Header Area */}
@@ -1676,29 +1854,30 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         />
       )}
 
-      {/* 2. Main Workspace Area */}
-      <div className="flex flex-1 overflow-hidden relative">
+      {/* 모바일 사이드바 배경 오버레이 */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
 
-        {/* 모바일 사이드바 배경 오버레이 */}
-        {isMobileSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/30 z-30 md:hidden"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-        )}
+      {/* Main Content Container - flex-1을 차지하는 컨테이너 */}
+      <div className="flex flex-1 overflow-hidden">
 
-        {/* Left Sidebar (Filter) - 모바일에서는 오버레이 */}
-        <aside className={`
-          bg-white border-r border-gray-200 flex flex-col shrink-0
-          transition-all duration-300 ease-in-out
-          ${isMobileSidebarOpen ? 'w-64' : 'w-0'}
-          md:w-64 md:border-r md:border-gray-200
-          fixed md:static
-          h-full md:h-auto
-          z-40 md:z-auto
-          top-16 md:top-0
-          left-0 md:left-0
-        `}>
+      {/* Left Sidebar (Filter) - Desktop: static | Mobile: fixed modal */}
+      <aside
+        className="bg-white border-r border-gray-200 flex flex-col shrink-0 md:relative md:w-64 md:z-auto"
+        style={isMobile ? {
+          position: 'fixed',
+          top: 0,
+          left: isMobileSidebarOpen ? '0' : '-16rem',
+          height: '100vh',
+          width: '16rem',
+          zIndex: 50,
+          transition: 'left 0.3s ease-in-out'
+        } : {}}>
+
           <div className="p-4 flex items-center justify-between">
             <h2 className="font-bold text-gray-800">필터</h2>
             {/* 모바일 닫기 버튼 */}
@@ -1843,6 +2022,9 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
           </div>
         </aside>
 
+        {/* 2. Main Workspace Area */}
+        <div className="flex flex-1 overflow-hidden relative">
+
         {/* Center Main Content (Table) */}
         <main className="flex-1 flex flex-col bg-gray-50/50 relative overflow-hidden">
             
@@ -1863,15 +2045,20 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                     className="text-2xl font-bold text-gray-800 border-2 border-blue-500 rounded px-2 py-1 focus:outline-none"
                   />
                 ) : (
-                  <h1
-                    className="text-2xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200 rounded px-2 py-1 transition-colors"
-                    onDoubleClick={handleTableNameDoubleClick}
-                    title="더블클릭으로 이름 변경"
-                  >
-                    {activeTable?.name}
-                  </h1>
+                  <div className="flex items-center gap-4">
+                    <h1
+                      className="text-2xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200 rounded px-2 py-1 transition-colors"
+                      onDoubleClick={handleTableNameDoubleClick}
+                      title="더블클릭으로 이름 변경"
+                    >
+                      {activeTable?.name}
+                    </h1>
+                    <div className="text-2xl font-bold text-red-600">
+                      {formatCurrentDateTime()}
+                    </div>
+                  </div>
                 )}
-                
+
                 <div className="flex items-center bg-white rounded-lg border border-gray-200 p-0.5 shadow-sm">
                   <button
                       onClick={() => setIsDeleteLocked(!isDeleteLocked)}
@@ -2061,6 +2248,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         />
       </div>
 
+      </div> {/* Main Content Container 끝 */}
+
       {/* 4. Footer (Tabs) */}
       <footer className="h-12 bg-gray-100 border-t border-gray-200 flex items-center px-2 gap-1 overflow-x-auto shrink-0">
          {tables.map((table, index) => (
@@ -2183,6 +2372,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                     <option value={ColumnType.DATE_MANUAL}>날짜 (직접)</option>
                                     <option value={ColumnType.TIME_AUTO}>시간 (자동)</option>
                                     <option value={ColumnType.TIME_MANUAL}>시간 (직접)</option>
+                                    <option value={ColumnType.YMD_AUTO}>자동년월일</option>
+                                    <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
                                     <option value={ColumnType.CATEGORY}>카테고리</option>
                                 </select>
                                 <input
@@ -2286,6 +2477,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 <option value={ColumnType.DATE_MANUAL}>날짜 (직접)</option>
                                 <option value={ColumnType.TIME_AUTO}>시간 (자동)</option>
                                 <option value={ColumnType.TIME_MANUAL}>시간 (직접)</option>
+                                <option value={ColumnType.YMD_AUTO}>자동년월일</option>
+                                <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
                                 <option value={ColumnType.CATEGORY}>카테고리</option>
                             </select>
                       </div>
@@ -2566,6 +2759,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                               <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
                               <option value={ColumnType.TIME_AUTO}>자동 시간</option>
                               <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
+                              <option value={ColumnType.YMD_AUTO}>자동년월일</option>
+                              <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
                               <option value={ColumnType.CATEGORY}>카테고리</option>
                           </select>
                       </div>
@@ -2603,10 +2798,11 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
                 <div className="p-6 overflow-y-auto space-y-5">
                     {activeTable.columns.filter(c => !c.isHidden).map((col) => {
-                        const isAuto = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.TIME_AUTO;
+                        const isAuto = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.TIME_AUTO || col.type === ColumnType.YMD_AUTO;
                         const isDate = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.DATE_MANUAL;
                         const isTime = col.type === ColumnType.TIME_AUTO || col.type === ColumnType.TIME_MANUAL;
-                        const inputType = isDate ? 'date' : isTime ? 'time' : col.type === ColumnType.NUMBER ? 'number' : 'text';
+                        const isYMD = col.type === ColumnType.YMD_AUTO || col.type === ColumnType.YMD_MANUAL;
+                        const inputType = isDate ? 'date' : isTime ? 'time' : isYMD ? 'date' : col.type === ColumnType.NUMBER ? 'number' : 'text';
 
                         return (
                             <div key={col.id}>
