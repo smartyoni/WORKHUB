@@ -1437,7 +1437,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
       <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans overflow-hidden">
 
         {/* Mobile Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-2">
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-2 shrink-0">
           <button
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
             className="p-2 hover:bg-gray-100 rounded-lg shrink-0"
