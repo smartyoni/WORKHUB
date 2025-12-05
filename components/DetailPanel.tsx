@@ -320,10 +320,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
           {/* Basic Info */}
           <div className="space-y-1 flex-shrink-0 mt-5 border-t border-gray-100 pt-4">
-            <button
-              onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
-              className="w-full flex items-center justify-between hover:bg-gray-50 rounded px-2 py-1 transition-colors"
-            >
+            <div className="w-full flex items-center justify-between hover:bg-gray-50 rounded px-2 py-1 transition-colors gap-2">
               <div className="flex items-center gap-2 flex-1 flex-wrap">
                 <h3 className="text-sm font-bold text-gray-700">기본 정보</h3>
                 {sidebarColumnId && localRow && (
@@ -338,33 +335,35 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                   </>
                 )}
               </div>
-              {isBasicInfoOpen ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
+              {isEditingInfo ? (
+                <button
+                  onClick={saveChanges}
+                  className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 shrink-0"
+                >
+                  <Save className="w-3 h-3" /> 저장
+                </button>
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <button
+                  onClick={() => setIsEditingInfo(true)}
+                  className="flex items-center gap-1 px-2 py-1 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 shrink-0"
+                >
+                  <Edit2 className="w-3 h-3" /> 수정
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors shrink-0"
+              >
+                {isBasicInfoOpen ? (
+                  <ChevronUp className="w-4 h-4 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+            </div>
 
             {isBasicInfoOpen && (
               <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-end gap-2">
-                  {isEditingInfo ? (
-                    <button
-                      onClick={saveChanges}
-                      className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-                    >
-                      <Save className="w-3 h-3" /> 저장
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditingInfo(true)}
-                      className="flex items-center gap-1 px-2 py-1 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50"
-                    >
-                      <Edit2 className="w-3 h-3" /> 수정
-                    </button>
-                  )}
-                </div>
-
                 {/* Sidebar Column Edit Section */}
                 {sidebarColumnId && localRow && (
                   <div className="pb-2 border-b border-gray-100">
@@ -518,10 +517,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
         {/* Basic Info */}
         <div className="space-y-1 flex-shrink-0">
-          <button
-            onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
-            className="w-full flex items-center justify-between border-b border-gray-200 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors"
-          >
+          <div className="w-full flex items-center justify-between border-b border-gray-200 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors gap-2">
             <div className="flex items-center gap-2 flex-1">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
                 <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
@@ -539,33 +535,35 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </>
               )}
             </div>
-            {isBasicInfoOpen ? (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
+            {isEditingInfo ? (
+              <button
+                onClick={saveChanges}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors shadow-sm shrink-0"
+              >
+                <Save className="w-3.5 h-3.5" /> 저장
+              </button>
             ) : (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <button
+                onClick={() => setIsEditingInfo(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 transition-colors shrink-0"
+              >
+                <Edit2 className="w-3.5 h-3.5" /> 수정
+              </button>
             )}
-          </button>
+            <button
+              onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
+              className="p-1 hover:bg-gray-100 rounded transition-colors shrink-0"
+            >
+              {isBasicInfoOpen ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              )}
+            </button>
+          </div>
 
           {isBasicInfoOpen && (
             <>
-              <div className="flex items-center justify-end gap-2 mt-2">
-                {isEditingInfo ? (
-                  <button
-                    onClick={saveChanges}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors shadow-sm"
-                  >
-                    <Save className="w-3.5 h-3.5" /> 저장
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setIsEditingInfo(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 transition-colors"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" /> 수정
-                  </button>
-                )}
-              </div>
-
               {/* Sidebar Column Edit Section */}
               {sidebarColumnId && localRow && (
                 <div className="space-y-0.5 text-xs mt-3 pb-3 border-b border-gray-100">
