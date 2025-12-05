@@ -139,6 +139,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       }
   };
 
+  const isLongText = (type: ColumnType): boolean => {
+      return type === ColumnType.LONG_TEXT;
+  };
+
   // --- Checklist Logic ---
 
   const addChecklist = () => {
@@ -408,14 +412,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                           ) : (
                             <>
                               {isEditingInfo ? (
-                                <input
-                                  type={getInputType(sidebarCol.type)}
-                                  value={localRow[sidebarColumnId] || ''}
-                                  onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
-                                  className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
-                                />
+                                isLongText(sidebarCol.type) ? (
+                                  <textarea
+                                    value={localRow[sidebarColumnId] || ''}
+                                    onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                    className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm resize-none"
+                                    rows={4}
+                                  />
+                                ) : (
+                                  <input
+                                    type={getInputType(sidebarCol.type)}
+                                    value={localRow[sidebarColumnId] || ''}
+                                    onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                    className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                                  />
+                                )
                               ) : (
-                                <span className="text-gray-800 break-words flex-1">
+                                <span className="text-gray-800 break-words flex-1 whitespace-pre-wrap">
                                   {localRow[sidebarColumnId] || '-'}
                                 </span>
                               )}
@@ -468,14 +481,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                     ) : (
                       <>
                         {isEditingInfo ? (
-                          <input
-                            type={getInputType(col.type)}
-                            value={localRow[col.id] || ''}
-                            onChange={(e) => handleInfoChange(col.id, e.target.value)}
-                            className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
-                          />
+                          isLongText(col.type) ? (
+                            <textarea
+                              value={localRow[col.id] || ''}
+                              onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                              className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm resize-none"
+                              rows={4}
+                            />
+                          ) : (
+                            <input
+                              type={getInputType(col.type)}
+                              value={localRow[col.id] || ''}
+                              onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                              className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                            />
+                          )
                         ) : (
-                          <span className="text-gray-800 break-words flex-1">
+                          <span className="text-gray-800 break-words flex-1 whitespace-pre-wrap">
                             {localRow[col.id] || '-'}
                           </span>
                         )}
@@ -612,14 +634,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                           ) : (
                             <>
                               {isEditingInfo ? (
-                                <input
-                                  type={getInputType(sidebarCol.type)}
-                                  value={localRow[sidebarColumnId] || ''}
-                                  onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
-                                  className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                                />
+                                isLongText(sidebarCol.type) ? (
+                                  <textarea
+                                    value={localRow[sidebarColumnId] || ''}
+                                    onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                    className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+                                    rows={4}
+                                  />
+                                ) : (
+                                  <input
+                                    type={getInputType(sidebarCol.type)}
+                                    value={localRow[sidebarColumnId] || ''}
+                                    onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                    className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                  />
+                                )
                               ) : (
-                                <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                                <span className="text-gray-800 break-words block min-h-[1.5rem] whitespace-pre-wrap">
                                   {localRow[sidebarColumnId] || '-'}
                                 </span>
                               )}
@@ -666,7 +697,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                             </button>
                           </>
                         ) : (
-                          <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                          <span className="text-gray-800 break-words block min-h-[1.5rem] whitespace-pre-wrap">
                             {localRow[col.id] || '-'}
                           </span>
                         )}
@@ -674,14 +705,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                     ) : (
                       <>
                         {isEditingInfo ? (
-                          <input
-                            type={getInputType(col.type)}
-                            value={localRow[col.id] || ''}
-                            onChange={(e) => handleInfoChange(col.id, e.target.value)}
-                            className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                          />
+                          isLongText(col.type) ? (
+                            <textarea
+                              value={localRow[col.id] || ''}
+                              onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                              className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+                              rows={4}
+                            />
+                          ) : (
+                            <input
+                              type={getInputType(col.type)}
+                              value={localRow[col.id] || ''}
+                              onChange={(e) => handleInfoChange(col.id, e.target.value)}
+                              className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                            />
+                          )
                         ) : (
-                          <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                          <span className="text-gray-800 break-words block min-h-[1.5rem] whitespace-pre-wrap">
                             {localRow[col.id] || '-'}
                           </span>
                         )}

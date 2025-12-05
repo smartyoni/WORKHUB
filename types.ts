@@ -1,6 +1,7 @@
 
 export enum ColumnType {
   TEXT = 'TEXT',
+  LONG_TEXT = 'LONG_TEXT',
   NUMBER = 'NUMBER',
   DATE_AUTO = 'DATE_AUTO',     // Automatically set to current date on row creation
   DATE_MANUAL = 'DATE_MANUAL', // Manually entered by user
@@ -247,6 +248,11 @@ interface ValidatorResult {
 
 const validators: Record<ColumnType, (value: string) => ValidatorResult> = {
   [ColumnType.TEXT]: (value: string): ValidatorResult => ({
+    isValid: true,
+    value: value || '',
+  }),
+
+  [ColumnType.LONG_TEXT]: (value: string): ValidatorResult => ({
     isValid: true,
     value: value || '',
   }),

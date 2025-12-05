@@ -1811,6 +1811,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 <option value={ColumnType.TEXT}>텍스트</option>
+                                <option value={ColumnType.LONG_TEXT}>롱텍스트</option>
                                 <option value={ColumnType.NUMBER}>숫자</option>
                                 <option value={ColumnType.DATE_AUTO}>자동 날짜</option>
                                 <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
@@ -2456,6 +2457,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                     onChange={(e) => updateColumnInForm(idx, 'type', e.target.value)}
                                 >
                                     <option value={ColumnType.TEXT}>텍스트</option>
+                                    <option value={ColumnType.LONG_TEXT}>롱텍스트</option>
                                     <option value={ColumnType.NUMBER}>숫자</option>
                                     <option value={ColumnType.DATE_AUTO}>날짜 (자동)</option>
                                     <option value={ColumnType.DATE_MANUAL}>날짜 (직접)</option>
@@ -2562,6 +2564,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 onChange={(e) => setEditingColState({...editingColState, type: e.target.value as ColumnType})}
                             >
                                 <option value={ColumnType.TEXT}>텍스트</option>
+                                <option value={ColumnType.LONG_TEXT}>롱텍스트</option>
                                 <option value={ColumnType.NUMBER}>숫자</option>
                                 <option value={ColumnType.DATE_AUTO}>날짜 (자동)</option>
                                 <option value={ColumnType.DATE_MANUAL}>날짜 (직접)</option>
@@ -2852,6 +2855,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                           >
                               <option value={ColumnType.TEXT}>텍스트</option>
+                              <option value={ColumnType.LONG_TEXT}>롱텍스트</option>
                               <option value={ColumnType.NUMBER}>숫자</option>
                               <option value={ColumnType.DATE_AUTO}>자동 날짜</option>
                               <option value={ColumnType.DATE_MANUAL}>수동 날짜</option>
