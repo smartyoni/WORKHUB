@@ -520,10 +520,18 @@ export default function App() {
   useEffect(() => {
     setIsDeleteLocked(true);
     setActiveFilterId(null);
-    setActiveDateFilter(null);
+
+    // TODAY 테이블일 때는 기본으로 오늘 날짜 필터 적용
+    if (activeTableId === todayTableId && todayTableId) {
+      const today = new Date().toISOString().split('T')[0];
+      setActiveDateFilter(today);
+    } else {
+      setActiveDateFilter(null);
+    }
+
     setActiveCategoryFilter(null);
     localStorage.setItem('activeTableId', activeTableId);
-  }, [activeTableId]);
+  }, [activeTableId, todayTableId]);
 
   // --- MOBILE TOUCH HANDLERS ---
   const handleBookmarkTouchStart = (e: React.TouchEvent) => {
