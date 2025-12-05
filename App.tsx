@@ -1272,9 +1272,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
       setConfirmModalMessage(`"${col?.name}" 컬럼을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`);
       setConfirmModalAction(() => {
           const updatedColumns = activeTable.columns.filter(c => c.id !== colId);
-          const updatedRows = activeTable.rows.map(row => {
-              const { [colId]: _, ...rest } = row;
-              return rest;
+          const updatedRows: RowData[] = activeTable.rows.map(row => {
+              const newRow = { ...row };
+              delete newRow[colId];
+              return newRow;
           });
           setTables(prev => prev.map(t => t.id === activeTable.id ? { ...t, columns: updatedColumns, rows: updatedRows } : t));
           setActiveMenuColId(null);
