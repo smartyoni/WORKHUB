@@ -8,6 +8,7 @@ export enum ColumnType {
   TIME_MANUAL = 'TIME_MANUAL', // Manually entered by user
   YMD_AUTO = 'YMD_AUTO',       // Automatically set to current year-month-day on row creation
   YMD_MANUAL = 'YMD_MANUAL',   // Manually entered year-month-day by user
+  CHECKLIST = 'CHECKLIST',     // Checkbox column - when checked, strikethrough first column
   CATEGORY = 'CATEGORY',       // Category selection with custom management
 }
 
@@ -318,6 +319,11 @@ const validators: Record<ColumnType, (value: string) => ValidatorResult> = {
     }
     return { isValid: true, value: parsed };
   },
+
+  [ColumnType.CHECKLIST]: (): ValidatorResult => ({
+    isValid: true,
+    value: false,
+  }),
 
   [ColumnType.CATEGORY]: (value: string): ValidatorResult => ({
     isValid: true,

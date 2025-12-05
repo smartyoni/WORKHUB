@@ -149,7 +149,8 @@ export default function App() {
     return saved || '';
   });
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
-  
+  const [checklistStates, setChecklistStates] = useState<Record<string, boolean>>({});
+
   // Modals state
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
@@ -1119,6 +1120,14 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
     setIsRowModalOpen(false);
   };
 
+  // Checklist toggle
+  const toggleChecklist = (rowId: string) => {
+    setChecklistStates(prev => ({
+      ...prev,
+      [rowId]: !prev[rowId]
+    }));
+  };
+
   // --- CSV UPLOAD FUNCTIONS ---
   const handleCSVFileSelect = (file: File) => {
     if (!activeTable) return;
@@ -1244,11 +1253,34 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
   const handleRestoreColumn = (colId: string) => {
       if (!activeTable) return;
-      
-      const updatedColumns = activeTable.columns.map(c => 
+
+      const updatedColumns = activeTable.columns.map(c =>
           c.id === colId ? { ...c, isHidden: false } : c
       );
       setTables(prev => prev.map(t => t.id === activeTable.id ? { ...t, columns: updatedColumns } : t));
+  };
+
+  const handleDeleteColumn = (colId: string) => {
+      if (!activeTable) return;
+
+      if (activeTable.columns.length <= 1) {
+          alert('최소 하나의 컬럼은 있어야 합니다.');
+          return;
+      }
+
+      const col = activeTable.columns.find(c => c.id === colId);
+      setConfirmModalMessage(`"${col?.name}" 컬럼을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`);
+      setConfirmModalAction(() => () => {
+          const updatedColumns = activeTable.columns.filter(c => c.id !== colId);
+          const updatedRows = activeTable.rows.map(row => {
+              const { [colId]: _, ...rest } = row;
+              return rest;
+          });
+          setTables(prev => prev.map(t => t.id === activeTable.id ? { ...t, columns: updatedColumns, rows: updatedRows } : t));
+          setActiveMenuColId(null);
+          setIsConfirmModalOpen(false);
+      });
+      setIsConfirmModalOpen(true);
   };
 
   const openEditColumnModal = (col: Column) => {
@@ -1606,7 +1638,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                       <th
                         key={col.id}
                         className="px-4 py-3 text-left text-sm font-semibold whitespace-nowrap"
-                        style={{ width: `${col.width}px`, minWidth: `${col.width}px` }}
+                        style={{ width: col.type === ColumnType.CHECKLIST ? '80px' : `${col.width}px`, minWidth: col.type === ColumnType.CHECKLIST ? '80px' : `${col.width}px` }}
                       >
                         {col.name}
                       </th>
@@ -1628,15 +1660,37 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                         'hover:bg-gray-100'
                       }`}
                     >
-                      {visibleColumns.map(col => (
-                        <td
-                          key={col.id}
-                          className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis"
-                          style={{ width: `${col.width}px`, minWidth: `${col.width}px` }}
-                        >
-                          {String(row[col.id] || '-')}
-                        </td>
-                      ))}
+                      {visibleColumns.map((col, colIdx) => {
+                        const isChecklistCol = col.type === ColumnType.CHECKLIST;
+                        const isFirstCol = colIdx === 0;
+                        const isChecked = checklistStates[row.id] || false;
+
+                        return (
+                          <td
+                            key={col.id}
+                            className="px-4 py-3 text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                            style={{ width: isChecklistCol ? '80px' : `${col.width}px`, minWidth: isChecklistCol ? '80px' : `${col.width}px` }}
+                          >
+                            {isChecklistCol ? (
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleChecklist(row.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-5 h-5 cursor-pointer"
+                              />
+                            ) : isFirstCol && isChecked ? (
+                              <span className="text-gray-700 line-through">
+                                {String(row[col.id] || '-')}
+                              </span>
+                            ) : (
+                              <span className="text-gray-700">
+                                {String(row[col.id] || '-')}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -1754,6 +1808,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
                                 <option value={ColumnType.YMD_AUTO}>자동년월일</option>
                                 <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
+                                <option value={ColumnType.CHECKLIST}>체크리스트</option>
                                 <option value={ColumnType.CATEGORY}>카테고리</option>
                             </select>
                         </div>
@@ -2143,7 +2198,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                     <th
                                         key={col.id}
                                         className="px-4 py-3 font-medium border-r border-purple-500 last:border-none relative group select-none"
-                                        style={{ width: col.width, minWidth: col.width }}
+                                        style={{ width: col.type === ColumnType.CHECKLIST ? 80 : col.width, minWidth: col.type === ColumnType.CHECKLIST ? 80 : col.width }}
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-1">
@@ -2199,15 +2254,37 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                         'hover:bg-gray-50'
                                     }`}
                                 >
-                                    {visibleColumns.map(col => (
-                                        <td
-                                            key={col.id}
-                                            className={`px-4 py-3 border-r border-gray-400 last:border-none overflow-hidden text-ellipsis ${col.id === 'col-2' || col.id === 'col-3' ? 'text-blue-500' : 'text-gray-600'}`}
-                                            style={{ maxWidth: col.width }}
-                                        >
-                                            {row[col.id]}
-                                        </td>
-                                    ))}
+                                    {visibleColumns.map((col, colIdx) => {
+                                        const isChecklistCol = col.type === ColumnType.CHECKLIST;
+                                        const isFirstCol = colIdx === 0;
+                                        const isChecked = checklistStates[row.id] || false;
+
+                                        return (
+                                          <td
+                                              key={col.id}
+                                              className={`px-4 py-3 border-r border-gray-400 last:border-none overflow-hidden text-ellipsis ${col.id === 'col-2' || col.id === 'col-3' ? 'text-blue-500' : 'text-gray-600'}`}
+                                              style={{ maxWidth: isChecklistCol ? 80 : col.width }}
+                                          >
+                                              {isChecklistCol ? (
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={() => toggleChecklist(row.id)}
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  className="w-5 h-5 cursor-pointer"
+                                                />
+                                              ) : isFirstCol && isChecked ? (
+                                                <span className="line-through">
+                                                  {row[col.id]}
+                                                </span>
+                                              ) : (
+                                                <span>
+                                                  {row[col.id]}
+                                                </span>
+                                              )}
+                                          </td>
+                                        );
+                                    })}
                                 </tr>
                             ))}
                         </tbody>
@@ -2374,6 +2451,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                     <option value={ColumnType.TIME_MANUAL}>시간 (직접)</option>
                                     <option value={ColumnType.YMD_AUTO}>자동년월일</option>
                                     <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
+                                    <option value={ColumnType.CHECKLIST}>체크리스트</option>
                                     <option value={ColumnType.CATEGORY}>카테고리</option>
                                 </select>
                                 <input
@@ -2479,6 +2557,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 <option value={ColumnType.TIME_MANUAL}>시간 (직접)</option>
                                 <option value={ColumnType.YMD_AUTO}>자동년월일</option>
                                 <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
+                                <option value={ColumnType.CHECKLIST}>체크리스트</option>
                                 <option value={ColumnType.CATEGORY}>카테고리</option>
                             </select>
                       </div>
@@ -2681,11 +2760,18 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                     >
                         <Edit2 className="w-3.5 h-3.5"/> 컬럼 수정
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleHideColumn(activeMenuColId)}
-                        className="px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        className="px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
                         <EyeOff className="w-3.5 h-3.5"/> 숨기기
+                    </button>
+                    <div className="h-[1px] bg-gray-100 my-1"></div>
+                    <button
+                        onClick={() => handleDeleteColumn(activeMenuColId)}
+                        className="px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    >
+                        <Trash2 className="w-3.5 h-3.5"/> 컬럼 삭제
                     </button>
                 </div>
             </div>
@@ -2761,6 +2847,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                               <option value={ColumnType.TIME_MANUAL}>수동 시간</option>
                               <option value={ColumnType.YMD_AUTO}>자동년월일</option>
                               <option value={ColumnType.YMD_MANUAL}>수동년월일</option>
+                              <option value={ColumnType.CHECKLIST}>체크리스트</option>
                               <option value={ColumnType.CATEGORY}>카테고리</option>
                           </select>
                       </div>
