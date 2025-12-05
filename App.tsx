@@ -1628,7 +1628,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         )}
 
         {/* Main Content Area */}
-        <div className="overflow-hidden flex flex-col flex-1">
+        <div className="overflow-hidden flex flex-col flex-1 min-h-0">
           {/* Table Content */}
           <div className="w-full overflow-x-auto overflow-y-auto flex-1">
             {activeTable && (
@@ -1701,7 +1701,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         </div>
 
         {/* Mobile Table Tab Bar */}
-        <div className="bg-white border-t border-gray-200 px-2 py-2 flex gap-1 overflow-x-auto md:hidden">
+        <div className="bg-white border-t border-gray-200 px-2 py-2 flex gap-1 overflow-x-auto md:hidden shrink-0">
           {tables.map(table => (
             <button
               key={table.id}
