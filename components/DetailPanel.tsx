@@ -402,6 +402,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                                       </option>
                                     ))}
                                   </select>
+                                  <button
+                                    onClick={() => openCategoryManager(sidebarCol)}
+                                    className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
+                                    title="카테고리 관리"
+                                  >
+                                    <Settings className="w-3 h-3" />
+                                  </button>
                                 </>
                               ) : (
                                 <span className="text-gray-800 break-words flex-1">
@@ -624,6 +631,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                                       </option>
                                     ))}
                                   </select>
+                                  <button
+                                    onClick={() => openCategoryManager(sidebarCol)}
+                                    className="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors shrink-0"
+                                    title="카테고리 관리"
+                                  >
+                                    <Settings className="w-4 h-4" />
+                                  </button>
                                 </>
                               ) : (
                                 <span className="text-gray-800 break-words block min-h-[1.5rem]">
