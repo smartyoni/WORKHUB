@@ -710,7 +710,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           <div className="flex gap-2 mt-3 flex-shrink-0">
             <textarea
               placeholder="새로운 항목 추가... (Ctrl+Enter로 추가, Shift+Enter로 줄바꿈)"
-              className="flex-1 px-3 py-2 border-2 border-gray-400 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
+              className="flex-1 px-3 py-2 border-4 border-gray-600 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
               rows={3}
               value={newChecklistText}
               onChange={(e) => setNewChecklistText(e.target.value)}
@@ -733,14 +733,14 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           <div className="space-y-2 overflow-y-auto flex-1 mt-3">
             {localRow._checklists.map((item) => {
               return (
-                <div key={item.id} className="group bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-xs space-y-2">
+                <div key={item.id} className="group bg-gray-50 border-4 border-gray-600 rounded-lg p-2 text-xs space-y-2">
                   <div className="flex items-start gap-2">
                     <button
                       onClick={() => toggleChecklist(item.id)}
-                      className={`mt-0.5 w-4 h-4 flex items-center justify-center rounded border-2 shrink-0 ${
+                      className={`mt-0.5 w-4 h-4 flex items-center justify-center rounded border-4 shrink-0 ${
                         item.isChecked
                           ? 'bg-green-500 border-green-500 text-white'
-                          : 'bg-white border-gray-400 text-transparent hover:border-green-500'
+                          : 'bg-white border-gray-600 text-transparent hover:border-green-600'
                       } transition-colors`}
                     >
                       <CheckSquare className="w-3 h-3" />
@@ -749,7 +749,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       {editingChecklistId === item.id ? (
                         <textarea
                           autoFocus
-                          className="w-full px-2 py-1 border-2 border-green-500 rounded text-sm focus:outline-none bg-white resize-none whitespace-pre-wrap min-h-[100px]"
+                          className="w-full px-2 py-1 border-4 border-green-600 rounded text-sm focus:outline-none bg-white resize-none whitespace-pre-wrap min-h-[100px]"
                           rows={3}
                           defaultValue={item.text}
                           onBlur={(e) => {
