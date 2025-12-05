@@ -344,7 +344,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </button>
               ) : (
                 <button
-                  onClick={() => setIsEditingInfo(true)}
+                  onClick={() => {
+                    setIsEditingInfo(true);
+                    setIsBasicInfoOpen(true);
+                  }}
                   className="flex items-center gap-1 px-2 py-1 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 shrink-0"
                 >
                   <Edit2 className="w-3 h-3" /> 수정
@@ -544,7 +547,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </button>
             ) : (
               <button
-                onClick={() => setIsEditingInfo(true)}
+                onClick={() => {
+                  setIsEditingInfo(true);
+                  setIsBasicInfoOpen(true);
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 transition-colors shrink-0"
               >
                 <Edit2 className="w-3.5 h-3.5" /> 수정
