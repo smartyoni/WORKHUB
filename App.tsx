@@ -1749,6 +1749,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                   tableName={activeTable.name}
                   row={selectedRow}
                   columns={activeTable.columns}
+                  visibleColumns={activeTable.columns.filter(c => !c.isHidden)}
                   categories={categories}
                   setCategories={setCategories}
                   sidebarColumnId={getSidebarColumnId()}
@@ -2333,7 +2334,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         {/* 3. Detail Panel (Sliding Right Sidebar) */}
         <DetailPanel
             tableName={activeTable?.name || ''}
-            columns={visibleColumns}
+            columns={activeTable?.columns || []}
+            visibleColumns={visibleColumns}
             row={activeTable?.rows.find(r => r.id === selectedRowId) || null}
             categories={categories}
             setCategories={setCategories}

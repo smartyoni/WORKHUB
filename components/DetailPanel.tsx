@@ -6,6 +6,7 @@ interface DetailPanelProps {
   tableName: string;
   row: RowData | null;
   columns: Column[];
+  visibleColumns?: Column[];
   categories: CategoryGroup[];
   setCategories: (categories: CategoryGroup[]) => void;
   sidebarColumnId?: string | null;
@@ -23,6 +24,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   tableName,
   row,
   columns,
+  visibleColumns,
   categories,
   setCategories,
   sidebarColumnId,
@@ -426,7 +428,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 )}
 
                 <div className="space-y-1 text-xs">
-              {columns.filter(col => col.id !== sidebarColumnId).map((col) => {
+              {(visibleColumns || columns).filter(col => col.id !== sidebarColumnId).map((col) => {
                 const categoryGroup = getCategoryGroup(col.id);
                 const isCategoryType = col.type === ColumnType.CATEGORY;
 
@@ -631,7 +633,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               )}
 
               <div className="space-y-0.5 text-xs mt-2">
-            {columns.filter(col => col.id !== sidebarColumnId).map((col) => {
+            {(visibleColumns || columns).filter(col => col.id !== sidebarColumnId).map((col) => {
               const categoryGroup = getCategoryGroup(col.id);
               const isCategoryType = col.type === ColumnType.CATEGORY;
 
