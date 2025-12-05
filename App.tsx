@@ -1270,7 +1270,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
       const col = activeTable.columns.find(c => c.id === colId);
       setConfirmModalMessage(`"${col?.name}" 컬럼을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`);
-      setConfirmModalAction(() => () => {
+      setConfirmModalAction(() => {
           const updatedColumns = activeTable.columns.filter(c => c.id !== colId);
           const updatedRows = activeTable.rows.map(row => {
               const { [colId]: _, ...rest } = row;
