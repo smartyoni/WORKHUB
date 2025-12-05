@@ -35,6 +35,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 }) => {
   const [localRow, setLocalRow] = useState<RowData | null>(null);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
 
   // Checklist State
   const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
@@ -50,6 +51,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setIsEditingInfo(false);
     setEditingChecklistId(null);
     setNewChecklistText('');
+    setIsBasicInfoOpen(false);
   }, [row]);
 
   if (!localRow || !isOpen) return null;
@@ -167,7 +169,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   const deleteChecklist = (id: string) => {
     setConfirmModalMessage("이 체크리스트를 삭제하시겠습니까?");
-    setConfirmModalAction(() => () => {
+    setConfirmModalAction(() => {
       if (!localRow) return;
       const updatedChecklists = localRow._checklists.filter(item => item.id !== id);
       const updatedRow = { ...localRow, _checklists: updatedChecklists };
@@ -316,26 +318,39 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
           {/* Basic Info */}
           <div className="space-y-1 flex-shrink-0 mt-5 border-t border-gray-100 pt-4">
-            <div className="flex items-center justify-between">
+            <button
+              onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
+              className="w-full flex items-center justify-between hover:bg-gray-50 rounded px-2 py-1 transition-colors"
+            >
               <h3 className="text-xs font-bold text-gray-700">기본 정보</h3>
-              {isEditingInfo ? (
-                <button
-                  onClick={saveChanges}
-                  className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-                >
-                  <Save className="w-3 h-3" /> 저장
-                </button>
+              {isBasicInfoOpen ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
               ) : (
-                <button
-                  onClick={() => setIsEditingInfo(true)}
-                  className="flex items-center gap-1 px-2 py-1 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50"
-                >
-                  <Edit2 className="w-3 h-3" /> 수정
-                </button>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               )}
-            </div>
+            </button>
 
-            <div className="space-y-1 text-xs">
+            {isBasicInfoOpen && (
+              <div className="space-y-2 mt-2">
+                <div className="flex items-center justify-end gap-2">
+                  {isEditingInfo ? (
+                    <button
+                      onClick={saveChanges}
+                      className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                    >
+                      <Save className="w-3 h-3" /> 저장
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditingInfo(true)}
+                      className="flex items-center gap-1 px-2 py-1 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50"
+                    >
+                      <Edit2 className="w-3 h-3" /> 수정
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-1 text-xs">
               {columns.map((col) => {
                 const categoryGroup = getCategoryGroup(col.id);
                 const isCategoryType = col.type === ColumnType.CATEGORY;
@@ -393,6 +408,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 );
               })}
             </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -428,30 +445,42 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
         {/* Basic Info */}
         <div className="space-y-1 flex-shrink-0">
-          <div className="flex items-center justify-between border-b border-gray-200 pb-2"> {/* This is the container for h3 and the button */}
+          <button
+            onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
+            className="w-full flex items-center justify-between border-b border-gray-200 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors"
+          >
             <h3 className="text-xs font-bold text-gray-700 flex items-center gap-2">
               <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
               기본 정보
             </h3>
-            {/* Move the button here, aligned to the right */}
-            {isEditingInfo ? (
-              <button
-                onClick={saveChanges}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors shadow-sm"
-              >
-                <Save className="w-3.5 h-3.5" /> 저장
-              </button>
+            {isBasicInfoOpen ? (
+              <ChevronUp className="w-4 h-4 text-gray-400" />
             ) : (
-              <button
-                onClick={() => setIsEditingInfo(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 transition-colors"
-              >
-                <Edit2 className="w-3.5 h-3.5" /> 수정
-              </button>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
             )}
-          </div>
+          </button>
 
-          <div className="space-y-0.5 text-xs">
+          {isBasicInfoOpen && (
+            <>
+              <div className="flex items-center justify-end gap-2 mt-2">
+                {isEditingInfo ? (
+                  <button
+                    onClick={saveChanges}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" /> 저장
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsEditingInfo(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs rounded hover:bg-gray-50 transition-colors"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> 수정
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-0.5 text-xs mt-2">
             {columns.map((col) => {
               const categoryGroup = getCategoryGroup(col.id);
               const isCategoryType = col.type === ColumnType.CATEGORY;
@@ -510,8 +539,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </div>
               );
             })}
-          </div>
-          {/* Removed the old justify-end div that contained the button */}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Checklist */}
