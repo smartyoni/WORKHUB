@@ -320,7 +320,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
           {/* Basic Info */}
           <div className="space-y-1 flex-shrink-0 mt-5 border-t border-gray-100 pt-4">
-            <div className="w-full flex items-center justify-between hover:bg-gray-50 rounded px-2 py-1 transition-colors gap-2">
+            <div className="w-full flex items-center justify-between border-b-2 border-blue-500 pb-2 hover:bg-gray-50 rounded px-2 py-1 transition-colors gap-2">
               <div className="flex items-center gap-2 flex-1 flex-wrap">
                 <h3 className="text-sm font-bold text-gray-700">기본 정보</h3>
                 {sidebarColumnId && localRow && (
@@ -520,7 +520,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
         {/* Basic Info */}
         <div className="space-y-1 flex-shrink-0">
-          <div className="w-full flex items-center justify-between border-b border-gray-200 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors gap-2">
+          <div className="w-full flex items-center justify-between border-b-2 border-blue-500 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors gap-2">
             <div className="flex items-center gap-2 flex-1">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
                 <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
