@@ -8,6 +8,7 @@ interface DetailPanelProps {
   columns: Column[];
   categories: CategoryGroup[];
   setCategories: (categories: CategoryGroup[]) => void;
+  sidebarColumnId?: string | null;
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedRow: RowData) => void;
@@ -24,6 +25,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   columns,
   categories,
   setCategories,
+  sidebarColumnId,
   isOpen,
   onClose,
   onUpdate,
@@ -322,7 +324,20 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
               className="w-full flex items-center justify-between hover:bg-gray-50 rounded px-2 py-1 transition-colors"
             >
-              <h3 className="text-xs font-bold text-gray-700">기본 정보</h3>
+              <div className="flex items-center gap-2 flex-1 flex-wrap">
+                <h3 className="text-sm font-bold text-gray-700">기본 정보</h3>
+                {sidebarColumnId && localRow && (
+                  <>
+                    <span className="text-gray-400">|</span>
+                    <span className="text-sm font-bold text-gray-700">
+                      {columns.find(c => c.id === sidebarColumnId)?.name}:
+                    </span>
+                    <span className="text-sm text-gray-700">
+                      {localRow[sidebarColumnId] || '-'}
+                    </span>
+                  </>
+                )}
+              </div>
               {isBasicInfoOpen ? (
                 <ChevronUp className="w-4 h-4 text-gray-400" />
               ) : (
@@ -350,8 +365,66 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                   )}
                 </div>
 
+                {/* Sidebar Column Edit Section */}
+                {sidebarColumnId && localRow && (
+                  <div className="pb-2 border-b border-gray-100">
+                    {(() => {
+                      const sidebarCol = columns.find(c => c.id === sidebarColumnId);
+                      if (!sidebarCol) return null;
+
+                      const categoryGroup = categories.find(c => c.columnId === sidebarColumnId);
+                      const isCategoryType = sidebarCol.type === ColumnType.CATEGORY;
+
+                      return (
+                        <div className="flex flex-wrap gap-2 items-start">
+                          <span className="text-gray-800 font-bold whitespace-nowrap">{sidebarCol.name}:</span>
+                          {isCategoryType ? (
+                            <div className="flex-1 flex gap-1 items-center">
+                              {isEditingInfo ? (
+                                <>
+                                  <select
+                                    value={localRow[sidebarColumnId] || ''}
+                                    onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                    className="flex-1 p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                                  >
+                                    <option value="">선택 없음</option>
+                                    {categoryGroup?.items.map((item) => (
+                                      <option key={item.id} value={item.name}>
+                                        {item.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </>
+                              ) : (
+                                <span className="text-gray-800 break-words flex-1">
+                                  {localRow[sidebarColumnId] || '-'}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {isEditingInfo ? (
+                                <input
+                                  type={getInputType(sidebarCol.type)}
+                                  value={localRow[sidebarColumnId] || ''}
+                                  onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                  className="flex-1 min-w-[100px] p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm"
+                                />
+                              ) : (
+                                <span className="text-gray-800 break-words flex-1">
+                                  {localRow[sidebarColumnId] || '-'}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 <div className="space-y-1 text-xs">
-              {columns.map((col) => {
+              {columns.filter(col => col.id !== sidebarColumnId).map((col) => {
                 const categoryGroup = getCategoryGroup(col.id);
                 const isCategoryType = col.type === ColumnType.CATEGORY;
 
@@ -449,10 +522,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             onClick={() => setIsBasicInfoOpen(!isBasicInfoOpen)}
             className="w-full flex items-center justify-between border-b border-gray-200 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors"
           >
-            <h3 className="text-xs font-bold text-gray-700 flex items-center gap-2">
-              <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
-              기본 정보
-            </h3>
+            <div className="flex items-center gap-2 flex-1">
+              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+                기본 정보
+              </h3>
+              {sidebarColumnId && localRow && (
+                <>
+                  <span className="text-gray-400">|</span>
+                  <span className="text-sm font-bold text-gray-700">
+                    {columns.find(c => c.id === sidebarColumnId)?.name}:
+                  </span>
+                  <span className="text-sm text-gray-700">
+                    {localRow[sidebarColumnId] || '-'}
+                  </span>
+                </>
+              )}
+            </div>
             {isBasicInfoOpen ? (
               <ChevronUp className="w-4 h-4 text-gray-400" />
             ) : (
@@ -480,8 +566,68 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 )}
               </div>
 
+              {/* Sidebar Column Edit Section */}
+              {sidebarColumnId && localRow && (
+                <div className="space-y-0.5 text-xs mt-3 pb-3 border-b border-gray-100">
+                  {(() => {
+                    const sidebarCol = columns.find(c => c.id === sidebarColumnId);
+                    if (!sidebarCol) return null;
+
+                    const categoryGroup = categories.find(c => c.columnId === sidebarColumnId);
+                    const isCategoryType = sidebarCol.type === ColumnType.CATEGORY;
+
+                    return (
+                      <div className="grid grid-cols-3 gap-4 items-center">
+                        <span className="text-gray-500 font-medium">{sidebarCol.name}</span>
+                        <div className="col-span-2">
+                          {isCategoryType ? (
+                            <div className="flex gap-2 items-center">
+                              {isEditingInfo ? (
+                                <>
+                                  <select
+                                    value={localRow[sidebarColumnId] || ''}
+                                    onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                    className="flex-1 p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                  >
+                                    <option value="">선택 없음</option>
+                                    {categoryGroup?.items.map((item) => (
+                                      <option key={item.id} value={item.name}>
+                                        {item.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </>
+                              ) : (
+                                <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                                  {localRow[sidebarColumnId] || '-'}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {isEditingInfo ? (
+                                <input
+                                  type={getInputType(sidebarCol.type)}
+                                  value={localRow[sidebarColumnId] || ''}
+                                  onChange={(e) => handleInfoChange(sidebarColumnId, e.target.value)}
+                                  className="w-full p-1.5 border border-purple-200 rounded bg-purple-50 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                />
+                              ) : (
+                                <span className="text-gray-800 break-words block min-h-[1.5rem]">
+                                  {localRow[sidebarColumnId] || '-'}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
               <div className="space-y-0.5 text-xs mt-2">
-            {columns.map((col) => {
+            {columns.filter(col => col.id !== sidebarColumnId).map((col) => {
               const categoryGroup = getCategoryGroup(col.id);
               const isCategoryType = col.type === ColumnType.CATEGORY;
 

@@ -254,6 +254,18 @@ export default function App() {
   const visibleColumns = activeTable?.columns.filter(c => !c.isHidden) || [];
   const hiddenColumns = activeTable?.columns.filter(c => c.isHidden) || [];
 
+  // Determine which column is used for sidebar filtering
+  const getSidebarColumnId = (): string | null => {
+    if (!activeTable) return null;
+    // TODAY 테이블: 기록일 (col-1)
+    if (activeTableId === todayTableId) {
+      return 'col-1';
+    }
+    // 다른 테이블: 첫 번째 카테고리 칼럼
+    const categoryCol = activeTable.columns.find(c => c.type === ColumnType.CATEGORY);
+    return categoryCol?.id || null;
+  };
+
   // Get Filters for current table
   const currentTableFilters = customFilters.filter(f => f.tableId === activeTableId);
 
@@ -1739,6 +1751,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                   columns={activeTable.columns}
                   categories={categories}
                   setCategories={setCategories}
+                  sidebarColumnId={getSidebarColumnId()}
                   isOpen={isDetailPanelModal}
                   onClose={() => {
                     setIsDetailPanelModal(false);
@@ -2324,6 +2337,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
             row={activeTable?.rows.find(r => r.id === selectedRowId) || null}
             categories={categories}
             setCategories={setCategories}
+            sidebarColumnId={getSidebarColumnId()}
             isOpen={!!selectedRowId}
             onClose={() => setSelectedRowId(null)}
             onUpdate={updateRow}
