@@ -217,7 +217,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <button
               onClick={() => {
                 setConfirmModalMessage("이 행을 삭제하시겠습니까?");
-                setConfirmModalAction(() => () => onDeleteRow(localRow.id));
+                setConfirmModalAction(() => {
+                  onDeleteRow(localRow.id);
+                  setIsConfirmModalOpen(false);
+                });
                 setIsConfirmModalOpen(true);
               }}
               className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500"
