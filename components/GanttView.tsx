@@ -303,8 +303,8 @@ const GanttView: React.FC<GanttViewProps> = ({
               <div className="sticky left-0 w-32 flex-shrink-0 px-3 py-2 border-r border-gray-200 bg-gray-50 z-20">
                 <div className={`font-semibold text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>작업명</div>
               </div>
-              <div className="flex-1 overflow-x-auto" ref={headerScrollRef} onScroll={handleHeaderScroll}>
-                <div className="flex gap-0.5 px-2 py-2">
+              <div className={`flex-1 ${isMobile ? 'overflow-x-hidden' : 'overflow-x-auto'}`} ref={headerScrollRef} onScroll={handleHeaderScroll}>
+                <div className="flex gap-0.5 px-2 py-2" style={isMobile ? { minWidth: 'auto' } : { minWidth: `${allDates.length * 64}px` }}>
                   {allDates.map((date, idx) => (
                     <div
                       key={idx}
@@ -329,7 +329,7 @@ const GanttView: React.FC<GanttViewProps> = ({
             </div>
 
             {/* Tasks */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={tasksContainerRef} onScroll={handleTasksScroll}>
+            <div className={`flex-1 overflow-y-auto ${isMobile ? 'overflow-x-hidden' : 'overflow-x-auto'}`} ref={tasksContainerRef} onScroll={handleTasksScroll}>
               {tasks.map((task, taskIdx) => {
                 const { startIdx, endIdx } = getTaskPosition(task);
                 const width = ((endIdx - startIdx + 1) / allDates.length) * 100;
@@ -352,13 +352,13 @@ const GanttView: React.FC<GanttViewProps> = ({
                         setValidationError(null);
                         scrollToStartDate(task.startDate);
                       }}
-                      className="sticky left-0 w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50 z-10 cursor-pointer hover:bg-gray-100 transition-colors"
+                      className={`${isMobile ? 'sticky left-0 z-10' : 'sticky left-0 z-10'} w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors`}
                     >
                       <div className={`font-medium text-gray-800 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
                         {task.name}
                       </div>
                     </div>
-                    <div className="flex-1 relative min-h-12 px-2 py-2" style={{ minWidth: `${allDates.length * 64}px` }}>
+                    <div className="flex-1 relative min-h-12 px-2 py-2" style={isMobile ? { minWidth: 'auto' } : { minWidth: `${allDates.length * 64}px` }}>
                       {/* 배경 */}
                       <div className="absolute top-0 left-0 right-0 bottom-0 flex">
                         {allDates.map((date, idx) => (
