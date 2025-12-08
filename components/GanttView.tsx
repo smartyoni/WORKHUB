@@ -16,6 +16,9 @@ const GanttView: React.FC<GanttViewProps> = ({
   // Refs for scroll synchronization
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const tasksContainerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartScrollLeftRef = useRef(0);
 
   // State
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -229,6 +232,48 @@ const GanttView: React.FC<GanttViewProps> = ({
     }
   };
 
+  // Touch drag handling for mobile
+  const handleHeaderMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isMobile) return;
+    isDraggingRef.current = true;
+    dragStartXRef.current = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    dragStartScrollLeftRef.current = headerScrollRef.current?.scrollLeft || 0;
+  };
+
+  const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDraggingRef.current || !isMobile) return;
+
+    const currentX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    const diff = dragStartXRef.current - currentX;
+
+    if (headerScrollRef.current) {
+      headerScrollRef.current.scrollLeft = dragStartScrollLeftRef.current + diff;
+    }
+    if (tasksContainerRef.current) {
+      tasksContainerRef.current.scrollLeft = dragStartScrollLeftRef.current + diff;
+    }
+  };
+
+  const handleMouseUp = () => {
+    isDraggingRef.current = false;
+  };
+
+  React.useEffect(() => {
+    if (!isMobile) return;
+
+    document.addEventListener('mousemove', handleMouseMove as EventListener);
+    document.addEventListener('touchmove', handleMouseMove as EventListener);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove as EventListener);
+      document.removeEventListener('touchmove', handleMouseMove as EventListener);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isMobile]);
+
   // Render
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
@@ -303,8 +348,17 @@ const GanttView: React.FC<GanttViewProps> = ({
               <div className="sticky left-0 w-32 flex-shrink-0 px-3 py-2 border-r border-gray-200 bg-gray-50 z-20">
                 <div className={`font-semibold text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>작업명</div>
               </div>
-              <div className={`flex-1 ${isMobile ? 'overflow-x-hidden' : 'overflow-x-auto'}`} ref={headerScrollRef} onScroll={handleHeaderScroll}>
-                <div className="flex gap-0.5 px-2 py-2" style={isMobile ? { minWidth: 'auto' } : { minWidth: `${allDates.length * 64}px` }}>
+              <div
+                className={`flex-1 ${isMobile ? 'overflow-x-scroll' : 'overflow-x-auto'}`}
+                ref={headerScrollRef}
+                onScroll={handleHeaderScroll}
+                onMouseDown={handleHeaderMouseDown}
+                onTouchStart={handleHeaderMouseDown}
+                style={isMobile ? { cursor: 'grab', scrollbarWidth: 'none', msOverflowStyle: 'none' } : {}}
+              >
+                {isMobile && <style>{`[data-mobile-scroll]::-webkit-scrollbar { display: none; }`}</style>}
+
+                <div className="flex gap-0.5 px-2 py-2" style={{ minWidth: `${allDates.length * 64}px` }}>
                   {allDates.map((date, idx) => (
                     <div
                       key={idx}
@@ -329,7 +383,14 @@ const GanttView: React.FC<GanttViewProps> = ({
             </div>
 
             {/* Tasks */}
-            <div className={`flex-1 overflow-y-auto ${isMobile ? 'overflow-x-hidden' : 'overflow-x-auto'}`} ref={tasksContainerRef} onScroll={handleTasksScroll}>
+            <div
+              className={`flex-1 overflow-y-auto ${isMobile ? 'overflow-x-scroll' : 'overflow-x-auto'}`}
+              ref={tasksContainerRef}
+              onScroll={handleTasksScroll}
+              onMouseDown={handleHeaderMouseDown}
+              onTouchStart={handleHeaderMouseDown}
+              style={isMobile ? { cursor: 'grab', scrollbarWidth: 'none', msOverflowStyle: 'none' } : {}}
+            >
               {tasks.map((task, taskIdx) => {
                 const { startIdx, endIdx } = getTaskPosition(task);
                 const width = ((endIdx - startIdx + 1) / allDates.length) * 100;
@@ -358,7 +419,7 @@ const GanttView: React.FC<GanttViewProps> = ({
                         {task.name}
                       </div>
                     </div>
-                    <div className="flex-1 relative min-h-12 px-2 py-2" style={isMobile ? { minWidth: 'auto' } : { minWidth: `${allDates.length * 64}px` }}>
+                    <div className="flex-1 relative min-h-12 px-2 py-2" style={{ minWidth: `${allDates.length * 64}px` }}>
                       {/* 배경 */}
                       <div className="absolute top-0 left-0 right-0 bottom-0 flex">
                         {allDates.map((date, idx) => (
