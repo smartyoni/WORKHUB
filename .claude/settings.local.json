@@ -22,7 +22,15 @@
       "Bash(powershell -Command \"Stop-Process -Name node -Force\")",
       "Bash(timeout 3 powershell:*)",
       "Bash(timeout 5 powershell:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 30 npx tsc:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force; Start-Sleep -Seconds 2\")",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force dist\")",
+      "Bash(npm run deploy:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

@@ -213,7 +213,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         {/* Mobile Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10 shrink-0">
           <h2 className="text-base font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
-          <div className="flex items-center gap-0 ml-auto">
+          <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => {
                 setConfirmModalMessage("이 행을 삭제하시겠습니까?");
@@ -223,10 +223,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 });
                 setIsConfirmModalOpen(true);
               }}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500"
-              title="삭제"
+              className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 shrink-0"
+              title="이 행 삭제"
             >
-              <Trash2 className="w-4 h-4" />
+              삭제
             </button>
             <button
               onClick={onClose}
@@ -540,12 +540,12 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
         <h2 className="text-lg font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
         <div className="flex items-center gap-2"> {/* Group delete and close buttons */}
-            <button 
+            <button
                 onClick={() => onDeleteRow(localRow.id)} // Call onDeleteRow with the current localRow.id
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-red-500"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors shadow-sm shrink-0"
                 title="이 행 삭제"
             >
-                <Trash2 className="w-5 h-5" />
+                삭제
             </button>
             <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
               <X className="w-5 h-5 text-gray-500" />
