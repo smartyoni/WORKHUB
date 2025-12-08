@@ -1731,7 +1731,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         {/* Mobile Detail Panel Modal */}
         {isDetailPanelModal && selectedRow && activeTable && (
           <div className="fixed inset-0 bg-black/50 flex items-end z-50 animate-in fade-in">
-            <div className="bg-white w-full h-screen flex flex-col overflow-hidden animate-in slide-in-from-bottom">
+            <div className="bg-white w-full max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom">
               <DetailPanel
                   tableName={activeTable.name}
                   row={selectedRow}
