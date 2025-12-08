@@ -132,6 +132,7 @@ const initialTablesUnsorted: TableDefinition[] = [
       'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
       _memo: '',
       _checklists: [],
+      _ganttTasks: [],
     })),
   },
 ];
@@ -403,7 +404,8 @@ export default function App() {
             ...table,
             rows: table.rows.map(row => ({
               ...row,
-              _checklists: row._checklists || []
+              _checklists: row._checklists || [],
+              _ganttTasks: row._ganttTasks || []
             }))
           }));
         };
@@ -1136,7 +1138,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         id: newRowId,
         ...rowFormData,
         _memo: '',
-        _checklists: []
+        _checklists: [],
+        _ganttTasks: []
     };
 
     const updatedTable = {
@@ -1224,7 +1227,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         id: `row-csv-${timestamp}-${index}`,
         ...validatedData,
         _memo: memoValue,
-        _checklists: []
+        _checklists: [],
+        _ganttTasks: []
       };
 
       return newRow;

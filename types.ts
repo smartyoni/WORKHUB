@@ -49,12 +49,22 @@ export interface ChecklistItem {
   replies: Reply[];
 }
 
+export interface GanttTask {
+  id: string;
+  name: string;
+  startDate: string;  // YYYY-MM-DD format
+  endDate: string;    // YYYY-MM-DD format
+  progress?: number;  // 0-100
+  color?: string;     // hex color code
+}
+
 export interface RowData {
   id: string;
   [key: string]: any; // Dynamic column data
   _memo: string;
   _category?: string; // Optional - for backward compatibility with existing data
   _checklists: ChecklistItem[];
+  _ganttTasks: GanttTask[];
 }
 
 export interface TableDefinition {

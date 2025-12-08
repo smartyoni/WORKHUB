@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem } from '../types';
+import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem, GanttTask } from '../types';
 import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft } from 'lucide-react';
+import GanttView from './GanttView';
 
 interface DetailPanelProps {
   tableName: string;
@@ -40,6 +41,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [localRow, setLocalRow] = useState<RowData | null>(null);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
+
+  // Tab Navigation State
+  const [activeTab, setActiveTab] = useState<'checklist' | 'gantt'>('checklist');
 
   // Checklist State
   const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
@@ -238,8 +242,35 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
         </div>
 
+        {/* Mobile Tab Navigation */}
+        <div className="flex border-b border-gray-200 bg-white">
+          <button
+            onClick={() => setActiveTab('checklist')}
+            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+              activeTab === 'checklist'
+                ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
+                : 'text-gray-500 bg-gray-50'
+            }`}
+          >
+            체크리스트
+          </button>
+          <button
+            onClick={() => setActiveTab('gantt')}
+            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+              activeTab === 'gantt'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                : 'text-gray-500 bg-gray-50'
+            }`}
+          >
+            간트차트
+          </button>
+        </div>
+
         {/* Mobile Content */}
         <div className="flex-1 overflow-hidden flex flex-col p-4">
+          {activeTab === 'checklist' ? (
+            <>
+
 
           {/* Checklist */}
           <div className="flex-1 overflow-hidden flex flex-col">
@@ -524,6 +555,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </div>
             )}
           </div>
+            </>
+          ) : (
+            <GanttView
+              tasks={localRow._ganttTasks}
+              onTasksUpdate={(updatedTasks) => {
+                const updatedRow = { ...localRow, _ganttTasks: updatedTasks };
+                setLocalRow(updatedRow);
+                onUpdate(updatedRow);
+              }}
+              isMobile={true}
+            />
+          )}
         </div>
       </div>
     );
@@ -553,10 +596,35 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200 px-6 bg-gray-50">
+        <button
+          onClick={() => setActiveTab('checklist')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'checklist'
+              ? 'text-green-600 border-b-2 border-green-600 -mb-px'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          체크리스트
+        </button>
+        <button
+          onClick={() => setActiveTab('gantt')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'gantt'
+              ? 'text-blue-600 border-b-2 border-blue-600 -mb-px'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          간트차트
+        </button>
+      </div>
+
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col p-6">
-
-        {/* Basic Info */}
+        {activeTab === 'checklist' ? (
+          <>
+            {/* Basic Info */}
         <div className="space-y-1 flex-shrink-0">
           <div className="w-full flex items-center justify-between border-b-2 border-blue-500 pb-2 hover:bg-gray-50 px-2 py-1 rounded transition-colors gap-2">
             <div className="flex items-center gap-2 flex-1">
@@ -856,7 +924,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             })}
           </div>
         </div>
-
+          </>
+        ) : (
+          <GanttView
+            tasks={localRow._ganttTasks}
+            onTasksUpdate={(updatedTasks) => {
+              const updatedRow = { ...localRow, _ganttTasks: updatedTasks };
+              setLocalRow(updatedRow);
+              onUpdate(updatedRow);
+            }}
+            isMobile={false}
+          />
+        )}
       </div>
 
       {/* Category Management Modal */}

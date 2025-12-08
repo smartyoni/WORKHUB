@@ -27,3 +27,99 @@
     background: #a8a8a8;
   }
 }
+
+/* Frappe Gantt Chart Styling */
+.gantt-container {
+  width: 100%;
+  overflow: auto;
+}
+
+.gantt {
+  background: white;
+}
+
+.gantt svg {
+  background: white;
+}
+
+.gantt .grid-background {
+  fill: white;
+}
+
+.gantt .grid-header {
+  fill: #f3f4f6;
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.gantt .grid-header-cell {
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+
+.gantt .bar {
+  fill: #3b82f6;
+  stroke: #1e40af;
+  stroke-width: 1;
+  rx: 3;
+  ry: 3;
+}
+
+.gantt .bar-label {
+  fill: white;
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.gantt .bar-progress {
+  fill: #1e40af;
+  opacity: 0.8;
+}
+
+.gantt .bar:hover {
+  stroke: #1e3a8a;
+  stroke-width: 2;
+}
+
+.gantt .row {
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+
+.gantt .row:nth-child(odd) {
+  background: #fafbfc;
+}
+
+.gantt .row:nth-child(even) {
+  background: white;
+}
+
+.gantt .row text {
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  fill: #374151;
+}
+
+.gantt .today-highlight {
+  fill: #fef08a;
+  opacity: 0.15;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .gantt-container {
+    max-height: 250px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .gantt .bar-label {
+    font-size: 10px;
+  }
+
+  .gantt .grid-header {
+    font-size: 10px;
+  }
+}
