@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem } from '../types';
-import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings } from 'lucide-react';
+import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft } from 'lucide-react';
 
 interface DetailPanelProps {
   tableName: string;
@@ -223,10 +223,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-500"
-              title="닫기"
+              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 shrink-0"
+              title="뒤로"
             >
-              <X className="w-4 h-4" />
+              <ChevronLeft className="w-3 h-3" /> 뒤로
             </button>
           </div>
         </div>
