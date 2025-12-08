@@ -49,6 +49,12 @@ export interface ChecklistItem {
   replies: Reply[];
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  isChecked: boolean;
+}
+
 export interface GanttTask {
   id: string;
   name: string;
@@ -56,6 +62,8 @@ export interface GanttTask {
   endDate: string;    // YYYY-MM-DD format
   progress?: number;  // 0-100
   color?: string;     // hex color code
+  description?: string; // Task description
+  checklists?: ChecklistItem[]; // Task checklists
 }
 
 export interface RowData {

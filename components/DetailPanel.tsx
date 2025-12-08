@@ -220,40 +220,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => {
-                setConfirmModalMessage("이 행을 삭제하시겠습니까?");
-                setConfirmModalAction(() => {
+                if (confirm("이 행을 삭제하시겠습니까?")) {
                   onDeleteRow(localRow.id);
-                  setIsConfirmModalOpen(false);
-                });
-                setIsConfirmModalOpen(true);
+                }
               }}
               className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 shrink-0"
               title="이 행 삭제"
             >
               삭제
             </button>
-            <button
-              onClick={onClose}
-              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 shrink-0"
-              title="뒤로"
-            >
-              <ChevronLeft className="w-3 h-3" /> 뒤로
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <X className="w-4 h-4 text-gray-500" />
             </button>
           </div>
         </div>
 
         {/* Mobile Tab Navigation */}
         <div className="flex border-b border-gray-200 bg-white">
-          <button
-            onClick={() => setActiveTab('checklist')}
-            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
-              activeTab === 'checklist'
-                ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
-                : 'text-gray-500 bg-gray-50'
-            }`}
-          >
-            체크리스트
-          </button>
           <button
             onClick={() => setActiveTab('gantt')}
             className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
@@ -263,6 +246,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             }`}
           >
             간트차트
+          </button>
+          <button
+            onClick={() => setActiveTab('checklist')}
+            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+              activeTab === 'checklist'
+                ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
+                : 'text-gray-500 bg-gray-50'
+            }`}
+          >
+            체크리스트
           </button>
         </div>
 
@@ -582,9 +575,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
         <h2 className="text-lg font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
-        <div className="flex items-center gap-2"> {/* Group delete and close buttons */}
+        <div className="flex items-center gap-2">
             <button
-                onClick={() => onDeleteRow(localRow.id)} // Call onDeleteRow with the current localRow.id
+                onClick={() => {
+                  if (confirm("이 행을 삭제하시겠습니까?")) {
+                    onDeleteRow(localRow.id);
+                  }
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors shadow-sm shrink-0"
                 title="이 행 삭제"
             >
@@ -599,16 +596,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 px-6 bg-gray-50">
         <button
-          onClick={() => setActiveTab('checklist')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'checklist'
-              ? 'text-green-600 border-b-2 border-green-600 -mb-px'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          체크리스트
-        </button>
-        <button
           onClick={() => setActiveTab('gantt')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'gantt'
@@ -617,6 +604,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           }`}
         >
           간트차트
+        </button>
+        <button
+          onClick={() => setActiveTab('checklist')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'checklist'
+              ? 'text-green-600 border-b-2 border-green-600 -mb-px'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          체크리스트
         </button>
       </div>
 

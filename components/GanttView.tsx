@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { GanttTask } from '../types';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
 
@@ -13,6 +13,10 @@ const GanttView: React.FC<GanttViewProps> = ({
   onTasksUpdate,
   isMobile = false
 }) => {
+  // Refs for scroll synchronization
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const tasksContainerRef = useRef<HTMLDivElement>(null);
+
   // State
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<GanttTask | null>(null);
@@ -24,8 +28,12 @@ const GanttView: React.FC<GanttViewProps> = ({
     name: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
-    progress: 0
+    progress: 0,
+    description: '',
+    checklists: [] as any[]
   });
+
+  const [newChecklistText, setNewChecklistText] = useState('');
 
   // 날짜 범위 계산
   const dateRange = useMemo(() => {
@@ -98,6 +106,13 @@ const GanttView: React.FC<GanttViewProps> = ({
     return new Date(start) <= new Date(end);
   };
 
+  // Helper function to calculate progress from checklists
+  const calculateProgress = (checklists: any[]) => {
+    if (!checklists || checklists.length === 0) return 0;
+    const completed = checklists.filter((c: any) => c.isChecked).length;
+    return Math.round((completed / checklists.length) * 100);
+  };
+
   // CRUD Operations
   const addTask = () => {
     if (!taskForm.name.trim()) {
@@ -115,8 +130,10 @@ const GanttView: React.FC<GanttViewProps> = ({
       name: taskForm.name.trim(),
       startDate: taskForm.startDate,
       endDate: taskForm.endDate,
-      progress: taskForm.progress,
-      color: '#3B82F6'
+      progress: calculateProgress(taskForm.checklists),
+      color: '#3B82F6',
+      description: taskForm.description,
+      checklists: taskForm.checklists
     };
 
     onTasksUpdate([...tasks, newTask]);
@@ -154,7 +171,9 @@ const GanttView: React.FC<GanttViewProps> = ({
       name: taskForm.name,
       startDate: taskForm.startDate,
       endDate: taskForm.endDate,
-      progress: taskForm.progress
+      progress: calculateProgress(taskForm.checklists),
+      description: taskForm.description,
+      checklists: taskForm.checklists
     });
 
     setEditingTask(null);
@@ -166,8 +185,11 @@ const GanttView: React.FC<GanttViewProps> = ({
       name: '',
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
-      progress: 0
+      progress: 0,
+      description: '',
+      checklists: []
     });
+    setNewChecklistText('');
     setValidationError(null);
   };
 
@@ -175,6 +197,19 @@ const GanttView: React.FC<GanttViewProps> = ({
     setIsAddingTask(false);
     setEditingTask(null);
     resetForm();
+  };
+
+  // Scroll synchronization handler
+  const handleHeaderScroll = () => {
+    if (headerScrollRef.current && tasksContainerRef.current) {
+      tasksContainerRef.current.scrollLeft = headerScrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleTasksScroll = () => {
+    if (tasksContainerRef.current && headerScrollRef.current) {
+      headerScrollRef.current.scrollLeft = tasksContainerRef.current.scrollLeft;
+    }
   };
 
   // Render
@@ -248,10 +283,10 @@ const GanttView: React.FC<GanttViewProps> = ({
           <div className="flex flex-col h-full overflow-hidden">
             {/* Timeline Header */}
             <div className="flex flex-shrink-0 border-b border-gray-200 bg-gray-50">
-              <div className="w-32 flex-shrink-0 px-3 py-2 border-r border-gray-200">
+              <div className="sticky left-0 w-32 flex-shrink-0 px-3 py-2 border-r border-gray-200 bg-gray-50 z-20">
                 <div className={`font-semibold text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>작업명</div>
               </div>
-              <div className="flex-1 overflow-x-auto">
+              <div className="flex-1 overflow-x-auto" ref={headerScrollRef} onScroll={handleHeaderScroll}>
                 <div className="flex gap-0.5 px-2 py-2">
                   {allDates.map((date, idx) => (
                     <div
@@ -277,7 +312,7 @@ const GanttView: React.FC<GanttViewProps> = ({
             </div>
 
             {/* Tasks */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={tasksContainerRef} onScroll={handleTasksScroll}>
               {tasks.map((task, taskIdx) => {
                 const { startIdx, endIdx } = getTaskPosition(task);
                 const width = ((endIdx - startIdx + 1) / allDates.length) * 100;
@@ -285,94 +320,69 @@ const GanttView: React.FC<GanttViewProps> = ({
 
                 return (
                   <div key={task.id} className="flex flex-shrink-0 border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                    <div className="w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50">
+                    <div className="sticky left-0 w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50 z-10">
                       <div className={`font-medium text-gray-800 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
                         {task.name}
                       </div>
                     </div>
-                    <div className="flex-1 relative min-h-12 overflow-x-auto px-2 py-2">
-                      <div className="relative" style={{ minWidth: `${allDates.length * 64}px` }}>
-                        {/* 배경 */}
-                        <div className="absolute top-0 left-0 right-0 bottom-0 flex">
-                          {allDates.map((date, idx) => (
-                            <div
-                              key={idx}
-                              className="flex-shrink-0 w-16 border-r border-gray-100"
-                              style={{
-                                backgroundColor: date.getDay() === 0 || date.getDay() === 6 ? '#f9fafb' : 'transparent'
-                              }}
-                            />
-                          ))}
-                        </div>
-
-                        {/* 작업 바 */}
-                        <div
-                          className="absolute top-1/2 transform -translate-y-1/2 rounded-md shadow-sm transition-all hover:shadow-md cursor-pointer group"
-                          style={{
-                            left: `${offset}%`,
-                            width: `${width}%`,
-                            minWidth: '40px',
-                            backgroundColor: getTaskColor(taskIdx),
-                            height: '28px'
-                          }}
-                          onClick={() => {
-                            setEditingTask(task);
-                            setTaskForm({
-                              name: task.name,
-                              startDate: task.startDate,
-                              endDate: task.endDate,
-                              progress: task.progress || 0
-                            });
-                            setValidationError(null);
-                          }}
-                        >
-                          {/* 진행률 */}
-                          {task.progress !== undefined && task.progress > 0 && (
-                            <div
-                              className="absolute top-0 left-0 h-full rounded-md bg-black/20"
-                              style={{
-                                width: `${Math.min(task.progress, 100)}%`,
-                                transition: 'width 0.3s ease'
-                              }}
-                            />
-                          )}
-
-                          {/* 텍스트 */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className={`text-white font-semibold ${isMobile ? 'text-xs' : 'text-xs'}`}>
-                              {task.progress}%
-                            </div>
-                          </div>
-                        </div>
+                    <div className="flex-1 relative min-h-12 px-2 py-2" style={{ minWidth: `${allDates.length * 64}px` }}>
+                      {/* 배경 */}
+                      <div className="absolute top-0 left-0 right-0 bottom-0 flex">
+                        {allDates.map((date, idx) => (
+                          <div
+                            key={idx}
+                            className="flex-shrink-0 w-16 border-r border-gray-100"
+                            style={{
+                              backgroundColor: date.getDay() === 0 || date.getDay() === 6 ? '#f9fafb' : 'transparent'
+                            }}
+                          />
+                        ))}
                       </div>
-                    </div>
 
-                    {/* 액션 버튼 */}
-                    <div className="flex-shrink-0 px-3 py-2 flex gap-1 items-center bg-gray-50 border-l border-gray-200">
-                      <button
+                      {/* 작업 바 */}
+                      <div
+                        className="absolute top-1/2 transform -translate-y-1/2 rounded-md shadow-sm transition-all hover:shadow-md cursor-pointer group"
+                        style={{
+                          left: `${offset}%`,
+                          width: `${width}%`,
+                          minWidth: '40px',
+                          backgroundColor: getTaskColor(taskIdx),
+                          height: '28px'
+                        }}
                         onClick={() => {
                           setEditingTask(task);
                           setTaskForm({
                             name: task.name,
                             startDate: task.startDate,
                             endDate: task.endDate,
-                            progress: task.progress || 0
+                            progress: task.progress || 0,
+                            description: task.description || '',
+                            checklists: task.checklists || []
                           });
+                          setNewChecklistText('');
                           setValidationError(null);
                         }}
-                        className="p-1 text-blue-500 hover:bg-blue-100 rounded transition-colors"
-                        title="편집"
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteTask(task.id)}
-                        className="p-1 text-red-500 hover:bg-red-100 rounded transition-colors"
-                        title="삭제"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        {/* 진행률 */}
+                        {task.progress !== undefined && task.progress > 0 && (
+                          <div
+                            className="absolute top-0 left-0 h-full rounded-md bg-black/20"
+                            style={{
+                              width: `${Math.min(task.progress, 100)}%`,
+                              transition: 'width 0.3s ease'
+                            }}
+                          />
+                        )}
+
+                        {/* 텍스트 */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className={`text-white font-semibold ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                            {task.progress}%
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
                   </div>
                 );
               })}
@@ -389,12 +399,28 @@ const GanttView: React.FC<GanttViewProps> = ({
               <h3 className={`font-bold text-gray-800 ${isMobile ? 'text-base' : 'text-lg'}`}>
                 {editingTask ? '작업 수정' : '새 작업'}
               </h3>
-              <button
-                onClick={closeModal}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+              <div className="flex items-center gap-2">
+                {editingTask && (
+                  <button
+                    onClick={() => {
+                      if (confirm('이 작업을 삭제하시겠습니까?')) {
+                        deleteTask(editingTask.id);
+                        closeModal();
+                      }
+                    }}
+                    className="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+                    title="작업 삭제"
+                  >
+                    삭제
+                  </button>
+                )}
+                <button
+                  onClick={closeModal}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
             </div>
 
             {validationError && (
@@ -454,15 +480,134 @@ const GanttView: React.FC<GanttViewProps> = ({
 
               <div>
                 <label className={`block font-medium text-gray-700 mb-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                  진행률: {taskForm.progress}%
+                  체크리스트
+                  <span className="text-xs font-normal text-gray-400 ml-1">
+                    ({taskForm.checklists.filter((c: any) => c.isChecked).length}/{taskForm.checklists.length})
+                  </span>
                 </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={taskForm.progress}
-                  onChange={(e) => setTaskForm({ ...taskForm, progress: parseInt(e.target.value) })}
-                  className="w-full"
+
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="항목 추가"
+                    value={newChecklistText}
+                    onChange={(e) => setNewChecklistText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newChecklistText.trim()) {
+                          const newItem = {
+                            id: Date.now().toString(),
+                            text: newChecklistText.trim(),
+                            isChecked: false
+                          };
+                          const updatedChecklists = [...taskForm.checklists, newItem];
+                          setTaskForm({
+                            ...taskForm,
+                            checklists: updatedChecklists
+                          });
+                          setNewChecklistText('');
+
+                          // Update task in real-time if editing
+                          if (editingTask) {
+                            updateTask(editingTask.id, {
+                              checklists: updatedChecklists,
+                              progress: calculateProgress(updatedChecklists)
+                            });
+                          }
+                        }
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newChecklistText.trim()) {
+                        const newItem = {
+                          id: Date.now().toString(),
+                          text: newChecklistText.trim(),
+                          isChecked: false
+                        };
+                        const updatedChecklists = [...taskForm.checklists, newItem];
+                        setTaskForm({
+                          ...taskForm,
+                          checklists: updatedChecklists
+                        });
+                        setNewChecklistText('');
+
+                        // Update task in real-time if editing
+                        if (editingTask) {
+                          updateTask(editingTask.id, {
+                            checklists: updatedChecklists,
+                            progress: calculateProgress(updatedChecklists)
+                          });
+                        }
+                      }
+                    }}
+                    className="px-3 py-2 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600 transition-colors"
+                  >
+                    추가
+                  </button>
+                </div>
+
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {taskForm.checklists.map((item: any) => (
+                    <div key={item.id} className="flex items-center gap-2 p-1 bg-gray-50 rounded">
+                      <input
+                        type="checkbox"
+                        checked={item.isChecked}
+                        onChange={() => {
+                          const updated = taskForm.checklists.map((c: any) =>
+                            c.id === item.id ? { ...c, isChecked: !c.isChecked } : c
+                          );
+                          const newTaskForm = { ...taskForm, checklists: updated };
+                          setTaskForm(newTaskForm);
+
+                          // Update task in real-time if editing
+                          if (editingTask) {
+                            updateTask(editingTask.id, {
+                              checklists: updated,
+                              progress: calculateProgress(updated)
+                            });
+                          }
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <span className={`flex-1 text-sm ${item.isChecked ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                        {item.text}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const updated = taskForm.checklists.filter((c: any) => c.id !== item.id);
+                          setTaskForm({ ...taskForm, checklists: updated });
+
+                          // Update task in real-time if editing
+                          if (editingTask) {
+                            updateTask(editingTask.id, {
+                              checklists: updated,
+                              progress: calculateProgress(updated)
+                            });
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 text-xs"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className={`block font-medium text-gray-700 mb-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  설명
+                </label>
+                <textarea
+                  value={taskForm.description}
+                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-400 resize-none"
+                  placeholder="작업 설명을 입력하세요"
+                  rows={5}
                 />
               </div>
             </div>
