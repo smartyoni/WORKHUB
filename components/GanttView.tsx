@@ -199,6 +199,23 @@ const GanttView: React.FC<GanttViewProps> = ({
     resetForm();
   };
 
+  // Scroll calendar to show task's start date
+  const scrollToStartDate = (startDate: string) => {
+    if (!headerScrollRef.current) return;
+
+    const taskStartDate = new Date(startDate);
+    const startIdx = allDates.findIndex(d => d.toDateString() === taskStartDate.toDateString());
+
+    if (startIdx !== -1) {
+      // Calculate scroll position: startIdx * cellWidth (64px)
+      const scrollPosition = startIdx * 64;
+      headerScrollRef.current.scrollLeft = scrollPosition;
+      if (tasksContainerRef.current) {
+        tasksContainerRef.current.scrollLeft = scrollPosition;
+      }
+    }
+  };
+
   // Scroll synchronization handler
   const handleHeaderScroll = () => {
     if (headerScrollRef.current && tasksContainerRef.current) {
@@ -320,7 +337,23 @@ const GanttView: React.FC<GanttViewProps> = ({
 
                 return (
                   <div key={task.id} className="flex flex-shrink-0 border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                    <div className="sticky left-0 w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50 z-10">
+                    <div
+                      onClick={() => {
+                        setEditingTask(task);
+                        setTaskForm({
+                          name: task.name,
+                          startDate: task.startDate,
+                          endDate: task.endDate,
+                          progress: task.progress || 0,
+                          description: task.description || '',
+                          checklists: task.checklists || []
+                        });
+                        setNewChecklistText('');
+                        setValidationError(null);
+                        scrollToStartDate(task.startDate);
+                      }}
+                      className="sticky left-0 w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50 z-10 cursor-pointer hover:bg-gray-100 transition-colors"
+                    >
                       <div className={`font-medium text-gray-800 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
                         {task.name}
                       </div>
@@ -361,6 +394,7 @@ const GanttView: React.FC<GanttViewProps> = ({
                           });
                           setNewChecklistText('');
                           setValidationError(null);
+                          scrollToStartDate(task.startDate);
                         }}
                       >
                         {/* 진행률 */}
