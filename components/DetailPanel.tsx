@@ -215,7 +215,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           <h2 className="text-base font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
           <div className="flex items-center gap-0 ml-auto">
             <button
-              onClick={() => onDeleteRow(localRow.id)}
+              onClick={() => {
+                setConfirmModalMessage("이 행을 삭제하시겠습니까?");
+                setConfirmModalAction(() => () => onDeleteRow(localRow.id));
+                setIsConfirmModalOpen(true);
+              }}
               className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-red-500"
               title="삭제"
             >
