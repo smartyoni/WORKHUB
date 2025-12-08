@@ -311,7 +311,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                             />
                         ) : (
                             <span
-                                className={`text-sm font-semibold cursor-pointer select-none block whitespace-pre-wrap break-words ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                                className={`text-base font-semibold cursor-pointer select-none block whitespace-pre-wrap break-words ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
                                 onDoubleClick={() => setEditingChecklistId(item.id)}
                             >
                                 {item.text}
@@ -812,7 +812,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       {editingChecklistId === item.id ? (
                         <textarea
                           autoFocus
-                          className="w-full px-2 py-1 border-2 border-green-600 rounded text-sm focus:outline-none bg-white resize-none whitespace-pre-wrap min-h-[100px]"
+                          className="w-full px-2 py-1 border-2 border-green-600 rounded text-base focus:outline-none bg-white resize-none whitespace-pre-wrap min-h-[100px]"
                           rows={3}
                           defaultValue={item.text}
                           onBlur={(e) => {
@@ -836,7 +836,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       ) : (
                         <span
                           onDoubleClick={() => setEditingChecklistId(item.id)}
-                          className={`cursor-pointer hover:bg-white p-1 rounded block whitespace-pre-wrap break-words ${
+                          className={`text-base cursor-pointer hover:bg-white p-1 rounded block whitespace-pre-wrap break-words ${
                             item.isChecked ? 'text-gray-400 line-through' : 'text-gray-700'
                           }`}
                         >
