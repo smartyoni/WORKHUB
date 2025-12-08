@@ -46,6 +46,9 @@ const BOOKMARK_COLORS = [
   { id: 'gray', name: '회색', hex: '#9CA3AF' },
 ];
 
+// --- 미분류 카테고리 마커 ---
+const UNCATEGORIZED_MARKER = '__UNCATEGORIZED__';
+
 // --- MOCK DATA INITIALIZATION ---
 const initialBookmarkGroups: BookmarkGroup[] = [
   {
@@ -692,10 +695,28 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
       // Apply category filter
       if (activeCategoryFilter && activeTable) {
-          rows = rows.filter(row => row[activeCategoryFilter.columnId] === activeCategoryFilter.categoryName);
+          if (activeCategoryFilter.categoryName === UNCATEGORIZED_MARKER) {
+              // Filter for uncategorized rows (empty, null, or undefined)
+              rows = rows.filter(row => {
+                  const value = row[activeCategoryFilter.columnId];
+                  return value === '' || value === null || value === undefined;
+              });
+          } else {
+              // Normal category filter
+              rows = rows.filter(row => row[activeCategoryFilter.columnId] === activeCategoryFilter.categoryName);
+          }
       }
 
       return rows;
+  };
+
+  // Helper function to count uncategorized rows for a category column
+  const getUncategorizedCount = (columnId: string): number => {
+    if (!activeTable) return 0;
+    return activeTable.rows.filter(row => {
+      const value = row[columnId];
+      return value === '' || value === null || value === undefined;
+    }).length;
   };
 
   const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeDateFilter, activeTableId, activeCategoryFilter]);
@@ -1603,14 +1624,32 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
                 return categoryColumns.map(col => {
                   const categoryGroup = categories.find(c => c.columnId === col.id);
-                  if (!categoryGroup || categoryGroup.items.length === 0) return null;
+                  const uncategorizedCount = getUncategorizedCount(col.id);
 
                   return (
                     <div key={col.id} className="mt-4 pt-2 border-t border-gray-100">
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">
                         {col.name}
                       </h3>
-                      {categoryGroup.items.map((item) => (
+
+                      {/* Uncategorized item - always shown first */}
+                      <SideMenuItem
+                        key={`${col.id}-uncategorized`}
+                        icon={LayoutGrid}
+                        label="미분류"
+                        count={uncategorizedCount}
+                        active={activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === UNCATEGORIZED_MARKER}
+                        onClick={() => {
+                          if (activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === UNCATEGORIZED_MARKER) {
+                            setActiveCategoryFilter(null);
+                          } else {
+                            setActiveCategoryFilter({ columnId: col.id, categoryName: UNCATEGORIZED_MARKER });
+                          }
+                        }}
+                      />
+
+                      {/* Regular category items */}
+                      {categoryGroup && categoryGroup.items.map((item) => (
                         <SideMenuItem
                           key={item.id}
                           icon={LayoutGrid}
@@ -1861,7 +1900,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                           const isDate = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.DATE_MANUAL;
                           const isTime = col.type === ColumnType.TIME_AUTO || col.type === ColumnType.TIME_MANUAL;
                           const isYMD = col.type === ColumnType.YMD_AUTO || col.type === ColumnType.YMD_MANUAL;
+                          const isCategory = col.type === ColumnType.CATEGORY;
                           const inputType = isDate ? 'date' : isTime ? 'time' : isYMD ? 'date' : col.type === ColumnType.NUMBER ? 'number' : 'text';
+
+                          const categoryGroup = isCategory ? categories.find(c => c.columnId === col.id) : undefined;
 
                           return (
                               <div key={col.id}>
@@ -1869,15 +1911,30 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                       {col.name}
                                       {isAuto && <span className="text-blue-500 text-xs ml-1 font-normal">(자동입력)</span>}
                                   </label>
-                                  <input
-                                      type={inputType}
-                                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors ${
-                                          isAuto ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white border-gray-300'
-                                      }`}
-                                      value={rowFormData[col.id] || ''}
-                                      onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
-                                      disabled={isAuto}
-                                  />
+                                  {isCategory ? (
+                                      <select
+                                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors bg-white"
+                                          value={rowFormData[col.id] || ''}
+                                          onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
+                                      >
+                                          <option value="">선택 없음</option>
+                                          {categoryGroup?.items.map((item) => (
+                                              <option key={item.id} value={item.name}>
+                                                  {item.name}
+                                              </option>
+                                          ))}
+                                      </select>
+                                  ) : (
+                                      <input
+                                          type={inputType}
+                                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors ${
+                                              isAuto ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white border-gray-300'
+                                          }`}
+                                          value={rowFormData[col.id] || ''}
+                                          onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
+                                          disabled={isAuto}
+                                      />
+                                  )}
                               </div>
                           );
                       })}
@@ -2058,14 +2115,32 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
               return categoryColumns.map(col => {
                 const categoryGroup = categories.find(c => c.columnId === col.id);
-                if (!categoryGroup || categoryGroup.items.length === 0) return null;
+                const uncategorizedCount = getUncategorizedCount(col.id);
 
                 return (
                   <div key={col.id} className="mt-4 pt-2 border-t border-gray-100">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">
                       {col.name}
                     </h3>
-                    {categoryGroup.items.map((item) => (
+
+                    {/* Uncategorized item - always shown first */}
+                    <SideMenuItem
+                      key={`${col.id}-uncategorized`}
+                      icon={LayoutGrid}
+                      label="미분류"
+                      count={uncategorizedCount}
+                      active={activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === UNCATEGORIZED_MARKER}
+                      onClick={() => {
+                        if (activeCategoryFilter?.columnId === col.id && activeCategoryFilter?.categoryName === UNCATEGORIZED_MARKER) {
+                          setActiveCategoryFilter(null);
+                        } else {
+                          setActiveCategoryFilter({ columnId: col.id, categoryName: UNCATEGORIZED_MARKER });
+                        }
+                      }}
+                    />
+
+                    {/* Regular category items */}
+                    {categoryGroup && categoryGroup.items.map((item) => (
                       <SideMenuItem
                         key={item.id}
                         icon={LayoutGrid}
@@ -2905,7 +2980,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                         const isDate = col.type === ColumnType.DATE_AUTO || col.type === ColumnType.DATE_MANUAL;
                         const isTime = col.type === ColumnType.TIME_AUTO || col.type === ColumnType.TIME_MANUAL;
                         const isYMD = col.type === ColumnType.YMD_AUTO || col.type === ColumnType.YMD_MANUAL;
+                        const isCategory = col.type === ColumnType.CATEGORY;
                         const inputType = isDate ? 'date' : isTime ? 'time' : isYMD ? 'date' : col.type === ColumnType.NUMBER ? 'number' : 'text';
+
+                        const categoryGroup = isCategory ? categories.find(c => c.columnId === col.id) : undefined;
 
                         return (
                             <div key={col.id}>
@@ -2913,15 +2991,30 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                     {col.name}
                                     {isAuto && <span className="text-blue-500 text-xs ml-1 font-normal">(자동입력)</span>}
                                 </label>
-                                <input
-                                    type={inputType}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors ${
-                                        isAuto ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white border-gray-300'
-                                    }`}
-                                    value={rowFormData[col.id] || ''}
-                                    onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
-                                    disabled={isAuto}
-                                />
+                                {isCategory ? (
+                                    <select
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors bg-white"
+                                        value={rowFormData[col.id] || ''}
+                                        onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
+                                    >
+                                        <option value="">선택 없음</option>
+                                        {categoryGroup?.items.map((item) => (
+                                            <option key={item.id} value={item.name}>
+                                                {item.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type={inputType}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors ${
+                                            isAuto ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white border-gray-300'
+                                        }`}
+                                        value={rowFormData[col.id] || ''}
+                                        onChange={(e) => setRowFormData({...rowFormData, [col.id]: e.target.value})}
+                                        disabled={isAuto}
+                                    />
+                                )}
                             </div>
                         );
                     })}
