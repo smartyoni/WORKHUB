@@ -498,8 +498,8 @@ const GanttView: React.FC<GanttViewProps> = ({
 
       {/* Add/Edit Task Modal */}
       {(isAddingTask || editingTask) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
-          <div className={`bg-white rounded-lg shadow-xl w-full max-w-md p-6 ${isMobile ? 'max-h-[80vh] overflow-y-auto' : ''}`}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4" onClick={closeModal}>
+          <div className={`bg-white rounded-lg shadow-xl w-full max-w-md p-6 ${isMobile ? 'max-h-[80vh] overflow-y-auto' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className={`font-bold text-gray-800 ${isMobile ? 'text-base' : 'text-lg'}`}>
                 {editingTask ? '작업 수정' : '새 작업'}
