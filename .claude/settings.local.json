@@ -30,7 +30,12 @@
       "Bash(powershell -Command \"Stop-Process -Name node -Force; Start-Sleep -Seconds 2\")",
       "Bash(powershell -Command \"Remove-Item -Recurse -Force dist\")",
       "Bash(npm run deploy:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(cat:*)",
+      "WebSearch",
+      "Bash(git checkout:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

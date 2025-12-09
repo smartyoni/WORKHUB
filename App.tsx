@@ -202,6 +202,11 @@ export default function App() {
   // --- CATEGORY FILTER STATE ---
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<{ columnId: string; categoryName: string } | null>(null);
 
+  // --- SEARCH STATE ---
+  const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+  const [searchHistory, setSearchHistory] = useState<Record<string, string[]>>({});
+  const [showSearchHistory, setShowSearchHistory] = useState<Record<string, boolean>>({});
+
   // Filter Creation Form State
   const [newFilterName, setNewFilterName] = useState('');
 
@@ -710,6 +715,18 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
           }
       }
 
+      // Apply search filter
+      const currentSearchTerm = searchTerms[activeTableId] || '';
+      if (currentSearchTerm.trim() !== '') {
+          const searchLower = currentSearchTerm.toLowerCase().trim();
+          rows = rows.filter(row => {
+              return activeTable.columns.some(col => {
+                  const cellValue = String(row[col.id] || '').toLowerCase();
+                  return cellValue.includes(searchLower);
+              });
+          });
+      }
+
       return rows;
   };
 
@@ -722,7 +739,58 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
     }).length;
   };
 
-  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeDateFilter, activeTableId, activeCategoryFilter]);
+  // --- SEARCH UTILITY FUNCTIONS ---
+  const MAX_SEARCH_HISTORY = 10;
+
+  const highlightSearchTerm = (text: string, searchTerm: string): JSX.Element => {
+    if (!searchTerm.trim()) {
+      return <>{text}</>;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    const textLower = text.toLowerCase();
+    const index = textLower.indexOf(searchLower);
+
+    if (index === -1) {
+      return <>{text}</>;
+    }
+
+    const before = text.substring(0, index);
+    const match = text.substring(index, index + searchTerm.length);
+    const after = text.substring(index + searchTerm.length);
+
+    return (
+      <>
+        {before}
+        <mark className="bg-yellow-300 font-semibold">{match}</mark>
+        {after.length > 0 ? highlightSearchTerm(after, searchTerm) : null}
+      </>
+    );
+  };
+
+  const addToSearchHistory = (tableId: string, term: string) => {
+    const trimmedTerm = term.trim();
+    if (trimmedTerm === '') return;
+
+    setSearchHistory(prev => {
+      const tableHistory = prev[tableId] || [];
+      const filtered = tableHistory.filter(t => t !== trimmedTerm);
+      const updated = [trimmedTerm, ...filtered].slice(0, MAX_SEARCH_HISTORY);
+      return {
+        ...prev,
+        [tableId]: updated
+      };
+    });
+  };
+
+  const clearSearchHistory = (tableId: string) => {
+    setSearchHistory(prev => ({
+      ...prev,
+      [tableId]: []
+    }));
+  };
+
+  const filteredRows = useMemo(() => getFilteredRows(), [activeTable, activeFilterId, customFilters, activeDateFilter, activeTableId, activeCategoryFilter, searchTerms]);
 
   // --- AUTO SAVE TO FIREBASE ---
   // ✅ SAFETY: dataSource가 'loaded'인 경우만 저장 (초기값 저장 방지)
@@ -754,6 +822,41 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
       saveCategories(categories).catch(error => console.error('Failed to save categories to Firebase:', error));
     }
   }, [categories, isDBLoaded, dataSource]);
+
+  // --- SEARCH HISTORY LOCALSTORAGE INTEGRATION ---
+
+  // Load search history from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('searchHistory');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSearchHistory(parsed);
+      } catch (e) {
+        console.error('Failed to parse search history:', e);
+      }
+    }
+  }, []);
+
+  // Save search history to localStorage whenever it changes
+  useEffect(() => {
+    if (dataSource === 'loaded' && Object.keys(searchHistory).length > 0) {
+      localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+    }
+  }, [searchHistory, dataSource]);
+
+  // Close search history dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.search-container')) {
+        setShowSearchHistory({});
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const openFilterModal = () => {
       setNewFilterName('');
@@ -2330,13 +2433,86 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
           </div>
 
           <div className="px-6 pb-2">
-            <div className="relative">
+            <div className="relative search-container">
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     placeholder="검색..."
-                    className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition-shadow"
+                    value={searchTerms[activeTableId] || ''}
+                    onChange={(e) => {
+                      setSearchTerms(prev => ({
+                        ...prev,
+                        [activeTableId]: e.target.value
+                      }));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const term = searchTerms[activeTableId] || '';
+                        if (term.trim()) {
+                          addToSearchHistory(activeTableId, term);
+                          setShowSearchHistory(prev => ({ ...prev, [activeTableId]: false }));
+                        }
+                      } else if (e.key === 'Escape') {
+                        setSearchTerms(prev => ({ ...prev, [activeTableId]: '' }));
+                        setShowSearchHistory(prev => ({ ...prev, [activeTableId]: false }));
+                      }
+                    }}
+                    onFocus={() => {
+                      if ((searchHistory[activeTableId] || []).length > 0) {
+                        setShowSearchHistory(prev => ({ ...prev, [activeTableId]: true }));
+                      }
+                    }}
+                    className="w-full pl-10 pr-24 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition-shadow"
                 />
+
+                {/* Search result count */}
+                {searchTerms[activeTableId] && (
+                  <div className="absolute right-12 top-2 text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded">
+                    {filteredRows.length}개
+                  </div>
+                )}
+
+                {/* Clear button */}
+                {searchTerms[activeTableId] && (
+                  <button
+                    onClick={() => {
+                      setSearchTerms(prev => ({ ...prev, [activeTableId]: '' }));
+                      setShowSearchHistory(prev => ({ ...prev, [activeTableId]: false }));
+                    }}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    title="검색어 지우기"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Search history dropdown */}
+                {showSearchHistory[activeTableId] && searchHistory[activeTableId]?.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+                      <span className="text-xs font-medium text-gray-500">최근 검색어</span>
+                      <button
+                        onClick={() => clearSearchHistory(activeTableId)}
+                        className="text-xs text-red-500 hover:text-red-700"
+                      >
+                        전체 삭제
+                      </button>
+                    </div>
+                    {searchHistory[activeTableId].map((term, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setSearchTerms(prev => ({ ...prev, [activeTableId]: term }));
+                          setShowSearchHistory(prev => ({ ...prev, [activeTableId]: false }));
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm border-b border-gray-50 last:border-none"
+                      >
+                        <Search className="w-3 h-3 inline mr-2 text-gray-400" />
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
             {activeFilterId && (
                 <div className="mt-2 flex items-center gap-2 text-sm text-purple-600 bg-purple-50 p-2 rounded-lg border border-purple-100 inline-block">
@@ -2441,7 +2617,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                 ) : isFirstCol ? (
                                                   <div className="flex items-center gap-2 justify-between">
                                                     <span className={isChecked ? 'line-through' : ''}>
-                                                      {row[col.id]}
+                                                      {highlightSearchTerm(String(row[col.id] || ''), searchTerms[activeTableId] || '')}
                                                     </span>
                                                     <div className="flex flex-col gap-1">
                                                       <button
@@ -2470,11 +2646,11 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                   </div>
                                                 ) : isChecked ? (
                                                   <span className="line-through">
-                                                    {row[col.id]}
+                                                    {highlightSearchTerm(String(row[col.id] || ''), searchTerms[activeTableId] || '')}
                                                   </span>
                                                 ) : (
                                                   <span>
-                                                    {row[col.id]}
+                                                    {highlightSearchTerm(String(row[col.id] || ''), searchTerms[activeTableId] || '')}
                                                   </span>
                                                 )}
                                             </td>
@@ -2488,7 +2664,11 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                     {filteredRows.length === 0 && (
                         <div className="p-10 text-center text-gray-400 flex flex-col items-center gap-2">
                             <Inbox className="w-8 h-8 opacity-20" />
-                            <span>표시할 데이터가 없습니다.</span>
+                            {searchTerms[activeTableId] ? (
+                              <span>'{searchTerms[activeTableId]}' 검색 결과가 없습니다.</span>
+                            ) : (
+                              <span>표시할 데이터가 없습니다.</span>
+                            )}
                         </div>
                     )}
                 </div>

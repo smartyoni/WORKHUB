@@ -362,16 +362,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             체크리스트
           </button>
           <button
-            onClick={() => setActiveTab('gantt')}
-            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
-              activeTab === 'gantt'
-                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                : 'text-gray-500 bg-gray-50'
-            }`}
-          >
-            간트차트
-          </button>
-          <button
             onClick={() => setActiveTab('note')}
             className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
               activeTab === 'note'
@@ -380,6 +370,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             }`}
           >
             NOTE
+          </button>
+          <button
+            onClick={() => setActiveTab('gantt')}
+            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+              activeTab === 'gantt'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                : 'text-gray-500 bg-gray-50'
+            }`}
+          >
+            간트차트
           </button>
         </div>
 
@@ -673,17 +673,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             )}
           </div>
             </>
-          ) : activeTab === 'gantt' ? (
-            <GanttView
-              tasks={localRow._ganttTasks}
-              onTasksUpdate={(updatedTasks) => {
-                const updatedRow = { ...localRow, _ganttTasks: updatedTasks };
-                setLocalRow(updatedRow);
-                onUpdate(updatedRow);
-              }}
-              isMobile={true}
-            />
-          ) : (
+          ) : activeTab === 'note' ? (
             <div className="flex-1 overflow-hidden flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-gray-700">NOTE</h3>
@@ -717,6 +707,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </div>
               )}
             </div>
+          ) : (
+            <GanttView
+              tasks={localRow._ganttTasks}
+              onTasksUpdate={(updatedTasks) => {
+                const updatedRow = { ...localRow, _ganttTasks: updatedTasks };
+                setLocalRow(updatedRow);
+                onUpdate(updatedRow);
+              }}
+              isMobile={true}
+            />
           )}
         </div>
       </div>
@@ -764,16 +764,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           체크리스트
         </button>
         <button
-          onClick={() => setActiveTab('gantt')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'gantt'
-              ? 'text-blue-600 border-b-2 border-blue-600 -mb-px'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          간트차트
-        </button>
-        <button
           onClick={() => setActiveTab('note')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'note'
@@ -782,6 +772,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           }`}
         >
           NOTE
+        </button>
+        <button
+          onClick={() => setActiveTab('gantt')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'gantt'
+              ? 'text-blue-600 border-b-2 border-blue-600 -mb-px'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          간트차트
         </button>
       </div>
 
@@ -1090,17 +1090,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
         </div>
           </>
-        ) : activeTab === 'gantt' ? (
-          <GanttView
-            tasks={localRow._ganttTasks}
-            onTasksUpdate={(updatedTasks) => {
-              const updatedRow = { ...localRow, _ganttTasks: updatedTasks };
-              setLocalRow(updatedRow);
-              onUpdate(updatedRow);
-            }}
-            isMobile={false}
-          />
-        ) : (
+        ) : activeTab === 'note' ? (
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between flex-shrink-0">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -1137,6 +1127,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </div>
             )}
           </div>
+        ) : (
+          <GanttView
+            tasks={localRow._ganttTasks}
+            onTasksUpdate={(updatedTasks) => {
+              const updatedRow = { ...localRow, _ganttTasks: updatedTasks };
+              setLocalRow(updatedRow);
+              onUpdate(updatedRow);
+            }}
+            isMobile={false}
+          />
         )}
       </div>
 
