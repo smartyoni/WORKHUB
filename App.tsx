@@ -1720,8 +1720,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                 <tbody>
                   {filteredRows.map((row, filteredIdx) => {
                     const actualIdx = activeTable.rows.findIndex(r => r.id === row.id);
-                    const isFirstRow = actualIdx === 0;
-                    const isLastRow = actualIdx === activeTable.rows.length - 1;
+                    const isFirstRow = filteredIdx === 0;
+                    const isLastRow = filteredIdx === filteredRows.length - 1;
 
                     return (
                       <tr
@@ -2390,10 +2390,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-400">
-                            {filteredRows.map((row) => {
+                            {filteredRows.map((row, filteredIdx) => {
                                 const actualIdx = activeTable.rows.findIndex(r => r.id === row.id);
-                                const isFirstRow = actualIdx === 0;
-                                const isLastRow = actualIdx === activeTable.rows.length - 1;
+                                const isFirstRow = filteredIdx === 0;
+                                const isLastRow = filteredIdx === filteredRows.length - 1;
 
                                 return (
                                   <tr
