@@ -278,7 +278,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <textarea
                 placeholder="항목 추가 (Ctrl+Enter로 추가)"
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
-                rows={2}
+                rows={1}
                 value={newChecklistText}
                 onChange={(e) => setNewChecklistText(e.target.value)}
                 onKeyDown={(e) => {
@@ -839,7 +839,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <textarea
               placeholder="새로운 항목 추가... (Ctrl+Enter로 추가, Shift+Enter로 줄바꿈)"
               className="flex-1 px-3 py-2 border-2 border-gray-600 rounded-md text-sm focus:outline-none focus:border-green-500 resize-none"
-              rows={3}
+              rows={1}
               value={newChecklistText}
               onChange={(e) => setNewChecklistText(e.target.value)}
               onKeyDown={(e) => {
