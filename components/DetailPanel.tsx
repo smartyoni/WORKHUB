@@ -290,7 +290,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               />
               <button
                 onClick={addChecklist}
-                className="p-2 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600 flex-shrink-0"
+                className="p-2 bg-green-500 rounded-md hover:bg-green-600 text-white flex-shrink-0"
               >
                 <Plus className="w-3 h-3" />
               </button>
