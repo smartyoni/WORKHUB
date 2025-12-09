@@ -133,6 +133,7 @@ const initialTablesUnsorted: TableDefinition[] = [
       _memo: '',
       _checklists: [],
       _ganttTasks: [],
+      _notes: '',
     })),
   },
 ];
@@ -1139,7 +1140,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         ...rowFormData,
         _memo: '',
         _checklists: [],
-        _ganttTasks: []
+        _ganttTasks: [],
+        _notes: ''
     };
 
     const updatedTable = {
@@ -1228,7 +1230,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         ...validatedData,
         _memo: memoValue,
         _checklists: [],
-        _ganttTasks: []
+        _ganttTasks: [],
+        _notes: ''
       };
 
       return newRow;

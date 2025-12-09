@@ -3,6 +3,62 @@ import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, Categ
 import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft } from 'lucide-react';
 import GanttView from './GanttView';
 
+/**
+ * URL Detection and Rendering Utility
+ *
+ * Security: Uses React components (not dangerouslySetInnerHTML) to prevent XSS
+ * Pattern: Detects http://, https://, and www. URLs
+ */
+const renderNotesWithLinks = (text: string): React.ReactNode => {
+  // Regex pattern for URL detection
+  // Matches: http://, https://, www.
+  const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  // Reset regex state
+  urlPattern.lastIndex = 0;
+
+  while ((match = urlPattern.exec(text)) !== null) {
+    const matchedUrl = match[0];
+    const startIndex = match.index;
+
+    // Add text before URL
+    if (startIndex > lastIndex) {
+      parts.push(text.substring(lastIndex, startIndex));
+    }
+
+    // Create clickable link
+    // Ensure www. URLs have protocol
+    const href = matchedUrl.startsWith('www.')
+      ? `https://${matchedUrl}`
+      : matchedUrl;
+
+    parts.push(
+      <a
+        key={startIndex}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 underline hover:text-blue-800 break-all"
+      >
+        {matchedUrl}
+      </a>
+    );
+
+    lastIndex = startIndex + matchedUrl.length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+};
+
 interface DetailPanelProps {
   tableName: string;
   row: RowData | null;
@@ -43,11 +99,15 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
 
   // Tab Navigation State
-  const [activeTab, setActiveTab] = useState<'checklist' | 'gantt'>('checklist');
+  const [activeTab, setActiveTab] = useState<'checklist' | 'gantt' | 'note'>('checklist');
 
   // Checklist State
   const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
   const [newChecklistText, setNewChecklistText] = useState('');
+
+  // Note Tab State
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteEditBuffer, setNoteEditBuffer] = useState('');
 
   // Category Management State
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -61,6 +121,12 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setNewChecklistText('');
     setIsBasicInfoOpen(false);
   }, [row]);
+
+  // Reset note edit state when switching tabs or rows
+  useEffect(() => {
+    setIsEditingNote(false);
+    setNoteEditBuffer('');
+  }, [activeTab, row?.id]);
 
   if (!localRow || !isOpen) return null;
 
@@ -209,6 +275,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     onUpdate(updatedRow);
   };
 
+  const saveNote = () => {
+    if (!localRow) return;
+    const updatedRow = { ...localRow, _notes: noteEditBuffer };
+    setLocalRow(updatedRow);
+    onUpdate(updatedRow);
+    setIsEditingNote(false);
+  };
 
   // Mobile Layout - Bottom sheet modal
   if (isMobile) {
@@ -256,6 +329,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             }`}
           >
             간트차트
+          </button>
+          <button
+            onClick={() => setActiveTab('note')}
+            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+              activeTab === 'note'
+                ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50'
+                : 'text-gray-500 bg-gray-50'
+            }`}
+          >
+            NOTE
           </button>
         </div>
 
@@ -549,7 +632,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             )}
           </div>
             </>
-          ) : (
+          ) : activeTab === 'gantt' ? (
             <GanttView
               tasks={localRow._ganttTasks}
               onTasksUpdate={(updatedTasks) => {
@@ -559,6 +642,32 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               }}
               isMobile={true}
             />
+          ) : (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-gray-700">NOTE</h3>
+                {isEditingNote ? (
+                  <button onClick={saveNote} className="flex items-center gap-1 px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700">
+                    <Save className="w-3 h-3" /> 저장
+                  </button>
+                ) : (
+                  <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                    <Edit2 className="w-3 h-3" /> 수정
+                  </button>
+                )}
+              </div>
+              {isEditingNote ? (
+                <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
+              ) : (
+                <div className="flex-1 overflow-y-auto p-3 border border-gray-200 rounded-md bg-gray-50">
+                  {localRow._notes ? (
+                    <div className="text-sm whitespace-pre-wrap break-words">{renderNotesWithLinks(localRow._notes)}</div>
+                  ) : (
+                    <p className="text-gray-400 text-sm">메모가 없습니다.</p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -614,6 +723,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           }`}
         >
           간트차트
+        </button>
+        <button
+          onClick={() => setActiveTab('note')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'note'
+              ? 'text-orange-600 border-b-2 border-orange-600 -mb-px'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          NOTE
         </button>
       </div>
 
@@ -922,7 +1041,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
         </div>
           </>
-        ) : (
+        ) : activeTab === 'gantt' ? (
           <GanttView
             tasks={localRow._ganttTasks}
             onTasksUpdate={(updatedTasks) => {
@@ -932,6 +1051,35 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             }}
             isMobile={false}
           />
+        ) : (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between flex-shrink-0">
+              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
+                NOTE
+              </h3>
+              {isEditingNote ? (
+                <button onClick={saveNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors shadow-sm">
+                  <Save className="w-3.5 h-3.5" /> 저장
+                </button>
+              ) : (
+                <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
+                  <Edit2 className="w-3.5 h-3.5" /> 수정
+                </button>
+              )}
+            </div>
+            {isEditingNote ? (
+              <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-4 mt-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 mt-3 border border-gray-200 rounded-md bg-gray-50">
+                {localRow._notes ? (
+                  <div className="text-sm whitespace-pre-wrap break-words">{renderNotesWithLinks(localRow._notes)}</div>
+                ) : (
+                  <p className="text-gray-400 text-sm">메모가 없습니다.</p>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

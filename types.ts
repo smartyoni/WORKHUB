@@ -73,6 +73,7 @@ export interface RowData {
   _category?: string; // Optional - for backward compatibility with existing data
   _checklists: ChecklistItem[];
   _ganttTasks: GanttTask[];
+  _notes: string;
 }
 
 export interface TableDefinition {
