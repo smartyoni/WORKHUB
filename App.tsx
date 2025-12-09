@@ -909,14 +909,29 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
 
   const handleMoveRow = (rowId: string, direction: 'up' | 'down') => {
       if (!activeTable) return;
-      const currentIndex = activeTable.rows.findIndex(r => r.id === rowId);
-      if (currentIndex === -1) return;
 
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      if (newIndex < 0 || newIndex >= activeTable.rows.length) return;
+      // 1. filteredRows에서 현재 행 찾기
+      const filteredRows = getFilteredRows();
+      const currentFilteredIndex = filteredRows.findIndex(r => r.id === rowId);
+      if (currentFilteredIndex === -1) return;
 
+      // 2. filteredRows에서 교환할 대상 인덱스 계산
+      const newFilteredIndex = direction === 'up' ? currentFilteredIndex - 1 : currentFilteredIndex + 1;
+      if (newFilteredIndex < 0 || newFilteredIndex >= filteredRows.length) return;
+
+      // 3. 두 행의 전체 배열에서의 실제 인덱스 찾기
+      const currentRow = filteredRows[currentFilteredIndex];
+      const targetRow = filteredRows[newFilteredIndex];
+
+      const currentActualIndex = activeTable.rows.findIndex(r => r.id === currentRow.id);
+      const targetActualIndex = activeTable.rows.findIndex(r => r.id === targetRow.id);
+
+      if (currentActualIndex === -1 || targetActualIndex === -1) return;
+
+      // 4. 전체 배열에서 두 행의 위치 교환
       const newRows = [...activeTable.rows];
-      [newRows[currentIndex], newRows[newIndex]] = [newRows[newIndex], newRows[currentIndex]];
+      [newRows[currentActualIndex], newRows[targetActualIndex]] =
+          [newRows[targetActualIndex], newRows[currentActualIndex]];
 
       setTables(prev => prev.map(t =>
           t.id === activeTable.id ? { ...t, rows: newRows } : t
