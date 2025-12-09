@@ -29,8 +29,6 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
-  ChevronDown,
   Calendar,
   Menu
 } from 'lucide-react';
@@ -1773,17 +1771,17 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 />
                               ) : isFirstCol ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="flex flex-col gap-0.5">
+                                  <div className="flex flex-col gap-1">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleMoveRow(row.id, 'up');
                                       }}
                                       disabled={isFirstRow}
-                                      className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                      className="px-2 py-0.5 bg-green-500 text-white text-xs font-medium rounded hover:bg-green-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-green-500 transition-colors"
                                       title="위로 이동"
                                     >
-                                      <ChevronUp className="w-4 h-4" />
+                                      위
                                     </button>
                                     <button
                                       onClick={(e) => {
@@ -1791,10 +1789,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                         handleMoveRow(row.id, 'down');
                                       }}
                                       disabled={isLastRow}
-                                      className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                      className="px-2 py-0.5 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-blue-500 transition-colors"
                                       title="아래로 이동"
                                     >
-                                      <ChevronDown className="w-4 h-4" />
+                                      아래
                                     </button>
                                   </div>
                                   <span className={isChecked ? 'text-gray-700 line-through' : 'text-gray-700'}>
@@ -2442,17 +2440,17 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                   />
                                                 ) : isFirstCol ? (
                                                   <div className="flex items-center gap-2">
-                                                    <div className="flex flex-col gap-0.5">
+                                                    <div className="flex flex-col gap-1">
                                                       <button
                                                         onClick={(e) => {
                                                           e.stopPropagation();
                                                           handleMoveRow(row.id, 'up');
                                                         }}
                                                         disabled={isFirstRow}
-                                                        className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                                        className="px-2 py-0.5 bg-green-500 text-white text-xs font-medium rounded hover:bg-green-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-green-500 transition-colors"
                                                         title="위로 이동"
                                                       >
-                                                        <ChevronUp className="w-4 h-4" />
+                                                        위
                                                       </button>
                                                       <button
                                                         onClick={(e) => {
@@ -2460,10 +2458,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                           handleMoveRow(row.id, 'down');
                                                         }}
                                                         disabled={isLastRow}
-                                                        className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                                        className="px-2 py-0.5 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-blue-500 transition-colors"
                                                         title="아래로 이동"
                                                       >
-                                                        <ChevronDown className="w-4 h-4" />
+                                                        아래
                                                       </button>
                                                     </div>
                                                     <span className={isChecked ? 'line-through' : ''}>
