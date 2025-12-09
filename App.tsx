@@ -29,6 +29,8 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Calendar,
   Menu
 } from 'lucide-react';
@@ -905,6 +907,22 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
       ));
   };
 
+  const handleMoveRow = (rowId: string, direction: 'up' | 'down') => {
+      if (!activeTable) return;
+      const currentIndex = activeTable.rows.findIndex(r => r.id === rowId);
+      if (currentIndex === -1) return;
+
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= activeTable.rows.length) return;
+
+      const newRows = [...activeTable.rows];
+      [newRows[currentIndex], newRows[newIndex]] = [newRows[newIndex], newRows[currentIndex]];
+
+      setTables(prev => prev.map(t =>
+          t.id === activeTable.id ? { ...t, rows: newRows } : t
+      ));
+  };
+
   const handleMoveTable = (tableId: string, direction: 'left' | 'right') => {
       // TODAY 테이블은 이동 불가
       if (tableId === todayTableId) return;
@@ -1700,53 +1718,89 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.map((row, idx) => (
-                    <tr
-                      key={row.id}
-                      onClick={() => {
-                        setSelectedRowId(row.id);
-                        setIsDetailPanelModal(true);
-                      }}
-                      className={`border-b cursor-pointer transition-colors ${
-                        selectedRowId === row.id ? 'bg-blue-50' :
-                        isDateToday(String(row['col-1'] || '')) ? 'bg-red-100 hover:bg-red-200' :
-                        isDateYesterday(String(row['col-1'] || '')) ? 'bg-blue-100 hover:bg-blue-200' :
-                        'hover:bg-gray-100'
-                      }`}
-                    >
-                      {visibleColumns.map((col, colIdx) => {
-                        const isChecklistCol = col.type === ColumnType.CHECKLIST;
-                        const isFirstCol = colIdx === 0;
-                        const isChecked = checklistStates[row.id] || false;
+                  {filteredRows.map((row, filteredIdx) => {
+                    const actualIdx = activeTable.rows.findIndex(r => r.id === row.id);
+                    const isFirstRow = actualIdx === 0;
+                    const isLastRow = actualIdx === activeTable.rows.length - 1;
 
-                        return (
-                          <td
-                            key={col.id}
-                            className="px-4 py-3 text-sm whitespace-nowrap overflow-hidden text-ellipsis"
-                            style={{ width: isChecklistCol ? '80px' : `${col.width}px`, minWidth: isChecklistCol ? '80px' : `${col.width}px` }}
-                          >
-                            {isChecklistCol ? (
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => toggleChecklist(row.id)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-5 h-5 cursor-pointer"
-                              />
-                            ) : isFirstCol && isChecked ? (
-                              <span className="text-gray-700 line-through">
-                                {String(row[col.id] || '-')}
-                              </span>
-                            ) : (
-                              <span className="text-gray-700">
-                                {String(row[col.id] || '-')}
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                    return (
+                      <tr
+                        key={row.id}
+                        onClick={() => {
+                          setSelectedRowId(row.id);
+                          setIsDetailPanelModal(true);
+                        }}
+                        className={`border-b cursor-pointer transition-colors ${
+                          selectedRowId === row.id ? 'bg-blue-50' :
+                          isDateToday(String(row['col-1'] || '')) ? 'bg-red-100 hover:bg-red-200' :
+                          isDateYesterday(String(row['col-1'] || '')) ? 'bg-blue-100 hover:bg-blue-200' :
+                          'hover:bg-gray-100'
+                        }`}
+                      >
+                        {visibleColumns.map((col, colIdx) => {
+                          const isChecklistCol = col.type === ColumnType.CHECKLIST;
+                          const isFirstCol = colIdx === 0;
+                          const isChecked = checklistStates[row.id] || false;
+
+                          return (
+                            <td
+                              key={col.id}
+                              className="px-4 py-3 text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                              style={{ width: isChecklistCol ? '80px' : `${col.width}px`, minWidth: isChecklistCol ? '80px' : `${col.width}px` }}
+                            >
+                              {isChecklistCol ? (
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleChecklist(row.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-5 h-5 cursor-pointer"
+                                />
+                              ) : isFirstCol ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveRow(row.id, 'up');
+                                      }}
+                                      disabled={isFirstRow}
+                                      className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                      title="위로 이동"
+                                    >
+                                      <ChevronUp className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMoveRow(row.id, 'down');
+                                      }}
+                                      disabled={isLastRow}
+                                      className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                      title="아래로 이동"
+                                    >
+                                      <ChevronDown className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                  <span className={isChecked ? 'text-gray-700 line-through' : 'text-gray-700'}>
+                                    {String(row[col.id] || '-')}
+                                  </span>
+                                </div>
+                              ) : isChecked ? (
+                                <span className="text-gray-700 line-through">
+                                  {String(row[col.id] || '-')}
+                                </span>
+                              ) : (
+                                <span className="text-gray-700">
+                                  {String(row[col.id] || '-')}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -2336,50 +2390,86 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-400">
-                            {filteredRows.map((row) => (
-                                <tr
-                                    key={row.id}
-                                    onClick={() => handleRowClick(row.id)}
-                                    className={`cursor-pointer transition-colors ${
-                                        selectedRowId === row.id ? 'bg-blue-50' :
-                                        isDateToday(String(row['col-1'] || '')) ? 'bg-red-100 hover:bg-red-200' :
-                                        isDateYesterday(String(row['col-1'] || '')) ? 'bg-blue-100 hover:bg-blue-200' :
-                                        'hover:bg-gray-50'
-                                    }`}
-                                >
-                                    {visibleColumns.map((col, colIdx) => {
-                                        const isChecklistCol = col.type === ColumnType.CHECKLIST;
-                                        const isFirstCol = colIdx === 0;
-                                        const isChecked = checklistStates[row.id] || false;
+                            {filteredRows.map((row) => {
+                                const actualIdx = activeTable.rows.findIndex(r => r.id === row.id);
+                                const isFirstRow = actualIdx === 0;
+                                const isLastRow = actualIdx === activeTable.rows.length - 1;
 
-                                        return (
-                                          <td
-                                              key={col.id}
-                                              className={`px-4 py-3 border-r border-gray-400 last:border-none overflow-hidden text-ellipsis ${col.id === 'col-2' || col.id === 'col-3' ? 'text-blue-500' : 'text-gray-600'}`}
-                                              style={{ maxWidth: isChecklistCol ? 80 : col.width }}
-                                          >
-                                              {isChecklistCol ? (
-                                                <input
-                                                  type="checkbox"
-                                                  checked={isChecked}
-                                                  onChange={() => toggleChecklist(row.id)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                  className="w-5 h-5 cursor-pointer"
-                                                />
-                                              ) : isFirstCol && isChecked ? (
-                                                <span className="line-through">
-                                                  {row[col.id]}
-                                                </span>
-                                              ) : (
-                                                <span>
-                                                  {row[col.id]}
-                                                </span>
-                                              )}
-                                          </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
+                                return (
+                                  <tr
+                                      key={row.id}
+                                      onClick={() => handleRowClick(row.id)}
+                                      className={`cursor-pointer transition-colors ${
+                                          selectedRowId === row.id ? 'bg-blue-50' :
+                                          isDateToday(String(row['col-1'] || '')) ? 'bg-red-100 hover:bg-red-200' :
+                                          isDateYesterday(String(row['col-1'] || '')) ? 'bg-blue-100 hover:bg-blue-200' :
+                                          'hover:bg-gray-50'
+                                      }`}
+                                  >
+                                      {visibleColumns.map((col, colIdx) => {
+                                          const isChecklistCol = col.type === ColumnType.CHECKLIST;
+                                          const isFirstCol = colIdx === 0;
+                                          const isChecked = checklistStates[row.id] || false;
+
+                                          return (
+                                            <td
+                                                key={col.id}
+                                                className={`px-4 py-3 border-r border-gray-400 last:border-none overflow-hidden text-ellipsis ${col.id === 'col-2' || col.id === 'col-3' ? 'text-blue-500' : 'text-gray-600'}`}
+                                                style={{ maxWidth: isChecklistCol ? 80 : col.width }}
+                                            >
+                                                {isChecklistCol ? (
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={isChecked}
+                                                    onChange={() => toggleChecklist(row.id)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="w-5 h-5 cursor-pointer"
+                                                  />
+                                                ) : isFirstCol ? (
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="flex flex-col gap-0.5">
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleMoveRow(row.id, 'up');
+                                                        }}
+                                                        disabled={isFirstRow}
+                                                        className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                                        title="위로 이동"
+                                                      >
+                                                        <ChevronUp className="w-4 h-4" />
+                                                      </button>
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleMoveRow(row.id, 'down');
+                                                        }}
+                                                        disabled={isLastRow}
+                                                        className="text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed p-0 leading-none"
+                                                        title="아래로 이동"
+                                                      >
+                                                        <ChevronDown className="w-4 h-4" />
+                                                      </button>
+                                                    </div>
+                                                    <span className={isChecked ? 'line-through' : ''}>
+                                                      {row[col.id]}
+                                                    </span>
+                                                  </div>
+                                                ) : isChecked ? (
+                                                  <span className="line-through">
+                                                    {row[col.id]}
+                                                  </span>
+                                                ) : (
+                                                  <span>
+                                                    {row[col.id]}
+                                                  </span>
+                                                )}
+                                            </td>
+                                          );
+                                      })}
+                                  </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                     {filteredRows.length === 0 && (
