@@ -468,7 +468,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       </div>
                       <button
                         onClick={() => deleteChecklist(item.id)}
-                        className={`text-gray-300 hover:text-red-500 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                        className="text-gray-400 hover:text-red-500 shrink-0 transition-colors"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -1079,7 +1079,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                     </div>
                     <button
                       onClick={() => deleteChecklist(item.id)}
-                      className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -1209,11 +1209,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                           />
                           <span className="text-sm text-gray-800">{item.name}</span>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => moveCategory(currentEditingCategoryColumn.id, item.id, 'up')}
                             disabled={isFirst}
-                            className="p-1.5 text-gray-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-400 transition-colors"
                             title="위로 이동"
                           >
                             <ChevronUp className="w-4 h-4" />
@@ -1221,14 +1221,14 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                           <button
                             onClick={() => moveCategory(currentEditingCategoryColumn.id, item.id, 'down')}
                             disabled={isLast}
-                            className="p-1.5 text-gray-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-400 transition-colors"
                             title="아래로 이동"
                           >
                             <ChevronDown className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteCategory(currentEditingCategoryColumn.id, item.id)}
-                            className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                             title="카테고리 삭제"
                           >
                             <Trash2 className="w-4 h-4" />
