@@ -344,12 +344,12 @@ const GanttView: React.FC<GanttViewProps> = ({
         ) : (
           <div className="flex flex-col h-full overflow-hidden">
             {/* Timeline Header */}
-            <div className="flex flex-shrink-0 border-b border-gray-200 bg-gray-50">
-              <div className="sticky left-0 w-32 flex-shrink-0 px-3 py-2 border-r border-gray-200 bg-gray-50 z-20">
+            <div className="grid flex-shrink-0 border-b border-gray-200 bg-gray-50" style={{ gridTemplateColumns: '128px 1fr' }}>
+              <div className="w-32 flex-shrink-0 px-3 py-2 border-r border-gray-200 bg-gray-50">
                 <div className={`font-semibold text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>작업명</div>
               </div>
               <div
-                className={`flex-1 ${isMobile ? 'overflow-x-scroll' : 'overflow-x-auto'}`}
+                className={`${isMobile ? 'overflow-x-scroll' : 'overflow-x-auto'}`}
                 ref={headerScrollRef}
                 onScroll={handleHeaderScroll}
                 onMouseDown={handleHeaderMouseDown}
@@ -383,104 +383,114 @@ const GanttView: React.FC<GanttViewProps> = ({
             </div>
 
             {/* Tasks */}
-            <div
-              className={`flex-1 overflow-y-auto ${isMobile ? 'overflow-x-scroll' : 'overflow-x-auto'}`}
-              ref={tasksContainerRef}
-              onScroll={handleTasksScroll}
-              onMouseDown={handleHeaderMouseDown}
-              onTouchStart={handleHeaderMouseDown}
-              style={isMobile ? { cursor: 'grab', scrollbarWidth: 'none', msOverflowStyle: 'none' } : {}}
-            >
-              {tasks.map((task, taskIdx) => {
-                const { startIdx, endIdx } = getTaskPosition(task);
-                const width = ((endIdx - startIdx + 1) / allDates.length) * 100;
-                const offset = (startIdx / allDates.length) * 100;
-
-                return (
-                  <div key={task.id} className="flex flex-shrink-0 border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                    <div
-                      onClick={() => {
-                        setEditingTask(task);
-                        setTaskForm({
-                          name: task.name,
-                          startDate: task.startDate,
-                          endDate: task.endDate,
-                          progress: task.progress || 0,
-                          description: task.description || '',
-                          checklists: task.checklists || []
-                        });
-                        setNewChecklistText('');
-                        setValidationError(null);
-                        scrollToStartDate(task.startDate);
-                      }}
-                      className={`${isMobile ? 'sticky left-0 z-10' : 'sticky left-0 z-10'} w-32 flex-shrink-0 px-3 py-3 border-r border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors`}
-                    >
-                      <div className={`font-medium text-gray-800 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                        {task.name}
-                      </div>
+            <div className="flex-1 overflow-hidden grid" style={{ gridTemplateColumns: '128px 1fr' }}>
+              {/* Task Names Column (Fixed) */}
+              <div className="border-r border-gray-200 bg-gray-50 overflow-y-auto">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    onClick={() => {
+                      setEditingTask(task);
+                      setTaskForm({
+                        name: task.name,
+                        startDate: task.startDate,
+                        endDate: task.endDate,
+                        progress: task.progress || 0,
+                        description: task.description || '',
+                        checklists: task.checklists || []
+                      });
+                      setNewChecklistText('');
+                      setValidationError(null);
+                      scrollToStartDate(task.startDate);
+                    }}
+                    className="px-3 py-3 border-b border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                    style={{ minHeight: '48px', display: 'flex', alignItems: 'center' }}
+                  >
+                    <div className={`font-medium text-gray-800 truncate w-full ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      {task.name}
                     </div>
-                    <div className="flex-1 relative min-h-12 px-2 py-2" style={{ minWidth: `${allDates.length * 64}px` }}>
-                      {/* 배경 */}
-                      <div className="absolute top-0 left-0 right-0 bottom-0 flex">
-                        {allDates.map((date, idx) => (
-                          <div
-                            key={idx}
-                            className="flex-shrink-0 w-16 border-r border-gray-100"
-                            style={{
-                              backgroundColor: date.getDay() === 0 || date.getDay() === 6 ? '#f9fafb' : 'transparent'
-                            }}
-                          />
-                        ))}
-                      </div>
+                  </div>
+                ))}
+              </div>
 
-                      {/* 작업 바 */}
-                      <div
-                        className="absolute top-1/2 transform -translate-y-1/2 rounded-md shadow-sm transition-all hover:shadow-md cursor-pointer group"
-                        style={{
-                          left: `${offset}%`,
-                          width: `${width}%`,
-                          minWidth: '40px',
-                          backgroundColor: getTaskColor(taskIdx),
-                          height: '28px'
-                        }}
-                        onClick={() => {
-                          setEditingTask(task);
-                          setTaskForm({
-                            name: task.name,
-                            startDate: task.startDate,
-                            endDate: task.endDate,
-                            progress: task.progress || 0,
-                            description: task.description || '',
-                            checklists: task.checklists || []
-                          });
-                          setNewChecklistText('');
-                          setValidationError(null);
-                          scrollToStartDate(task.startDate);
-                        }}
-                      >
-                        {/* 진행률 */}
-                        {task.progress !== undefined && task.progress > 0 && (
-                          <div
-                            className="absolute top-0 left-0 h-full rounded-md bg-black/20"
-                            style={{
-                              width: `${Math.min(task.progress, 100)}%`,
-                              transition: 'width 0.3s ease'
-                            }}
-                          />
-                        )}
+              {/* Timeline Column (Scrollable) */}
+              <div
+                className={`${isMobile ? 'overflow-x-scroll' : 'overflow-x-auto'} overflow-y-auto`}
+                ref={tasksContainerRef}
+                onScroll={handleTasksScroll}
+                onMouseDown={handleHeaderMouseDown}
+                onTouchStart={handleHeaderMouseDown}
+                style={isMobile ? { cursor: 'grab', scrollbarWidth: 'none', msOverflowStyle: 'none' } : {}}
+              >
+                <div style={{ minWidth: `${allDates.length * 64}px`, display: 'flex', flexDirection: 'column' }}>
+                  {tasks.map((task, taskIdx) => {
+                    const { startIdx, endIdx } = getTaskPosition(task);
+                    const width = ((endIdx - startIdx + 1) / allDates.length) * 100;
+                    const offset = (startIdx / allDates.length) * 100;
 
-                        {/* 텍스트 */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className={`text-white font-semibold ${isMobile ? 'text-xs' : 'text-xs'}`}>
-                            {task.progress}%
+                    return (
+                      <div key={task.id} className="relative border-b border-gray-200 hover:bg-blue-50 transition-colors" style={{ minHeight: '48px', display: 'flex', alignItems: 'center' }}>
+                        {/* 배경 */}
+                        <div className="absolute top-0 left-0 right-0 bottom-0 flex">
+                          {allDates.map((date, idx) => (
+                            <div
+                              key={idx}
+                              className="flex-shrink-0 w-16 border-r border-gray-100"
+                              style={{
+                                backgroundColor: date.getDay() === 0 || date.getDay() === 6 ? '#f9fafb' : 'transparent'
+                              }}
+                            />
+                          ))}
+                        </div>
+
+                        {/* 작업 바 */}
+                        <div
+                          className="absolute top-1/2 transform -translate-y-1/2 rounded-md shadow-sm transition-all hover:shadow-md cursor-pointer group"
+                          style={{
+                            left: `${offset}%`,
+                            width: `${width}%`,
+                            minWidth: '40px',
+                            backgroundColor: getTaskColor(taskIdx),
+                            height: '28px'
+                          }}
+                          onClick={() => {
+                            setEditingTask(task);
+                            setTaskForm({
+                              name: task.name,
+                              startDate: task.startDate,
+                              endDate: task.endDate,
+                              progress: task.progress || 0,
+                              description: task.description || '',
+                              checklists: task.checklists || []
+                            });
+                            setNewChecklistText('');
+                            setValidationError(null);
+                            scrollToStartDate(task.startDate);
+                          }}
+                        >
+                          {/* 진행률 */}
+                          {task.progress !== undefined && task.progress > 0 && (
+                            <div
+                              className="absolute top-0 left-0 h-full rounded-md bg-black/20"
+                              style={{
+                                width: `${Math.min(task.progress, 100)}%`,
+                                transition: 'width 0.3s ease'
+                              }}
+                            />
+                          )}
+
+                          {/* 텍스트 */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className={`text-white font-semibold ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                              {task.progress}%
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         )}
