@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem, GanttTask } from '../types';
-import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft } from 'lucide-react';
+import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft, Copy, RotateCcw } from 'lucide-react';
 import GanttView from './GanttView';
 
 /**
@@ -281,6 +281,14 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setLocalRow(updatedRow);
     onUpdate(updatedRow);
     setIsEditingNote(false);
+  };
+
+  const clearNote = () => {
+    setNoteEditBuffer('');
+  };
+
+  const copyNote = () => {
+    navigator.clipboard.writeText(noteEditBuffer);
   };
 
   // Mobile Layout - Bottom sheet modal
@@ -647,9 +655,17 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-gray-700">NOTE</h3>
                 {isEditingNote ? (
-                  <button onClick={saveNote} className="flex items-center gap-1 px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700">
-                    <Save className="w-3 h-3" /> 저장
-                  </button>
+                  <div className="flex gap-1">
+                    <button onClick={saveNote} className="flex items-center gap-1 px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700">
+                      <Save className="w-3 h-3" /> 저장
+                    </button>
+                    <button onClick={clearNote} className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600" title="초기화">
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                    <button onClick={copyNote} className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700" title="복사">
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
                 ) : (
                   <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
                     <Edit2 className="w-3 h-3" /> 수정
@@ -659,11 +675,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               {isEditingNote ? (
                 <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
               ) : (
-                <div className="flex-1 overflow-y-auto p-3 border border-gray-200 rounded-md bg-gray-50">
+                <div className="flex-1 overflow-y-auto p-3 border border-gray-200 rounded-md bg-gray-50 cursor-text" onDoubleClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }}>
                   {localRow._notes ? (
                     <div className="text-sm whitespace-pre-wrap break-words">{renderNotesWithLinks(localRow._notes)}</div>
                   ) : (
-                    <p className="text-gray-400 text-sm">메모가 없습니다.</p>
+                    <p className="text-gray-400 text-sm">메모가 없습니다. (더블클릭으로 편집)</p>
                   )}
                 </div>
               )}
@@ -1059,9 +1075,17 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 NOTE
               </h3>
               {isEditingNote ? (
-                <button onClick={saveNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors shadow-sm">
-                  <Save className="w-3.5 h-3.5" /> 저장
-                </button>
+                <div className="flex gap-1">
+                  <button onClick={saveNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors shadow-sm">
+                    <Save className="w-3.5 h-3.5" /> 저장
+                  </button>
+                  <button onClick={clearNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors" title="초기화">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={copyNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors" title="복사">
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               ) : (
                 <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
                   <Edit2 className="w-3.5 h-3.5" /> 수정
@@ -1071,11 +1095,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             {isEditingNote ? (
               <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-4 mt-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 mt-3 border border-gray-200 rounded-md bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-4 mt-3 border border-gray-200 rounded-md bg-gray-50 cursor-text" onDoubleClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }}>
                 {localRow._notes ? (
                   <div className="text-sm whitespace-pre-wrap break-words">{renderNotesWithLinks(localRow._notes)}</div>
                 ) : (
-                  <p className="text-gray-400 text-sm">메모가 없습니다.</p>
+                  <p className="text-gray-400 text-sm">메모가 없습니다. (더블클릭으로 편집)</p>
                 )}
               </div>
             )}
