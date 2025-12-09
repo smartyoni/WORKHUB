@@ -367,10 +367,15 @@ export function validateCSVData(csvRows: string[][], tableColumns: Column[]): Va
     return { isValid: false, errors: ['CSV 헤더가 없습니다'] };
   }
 
+  // 헤더 정규화: 앞뒤 공백 제거 및 연속된 공백을 단일 공백으로 변환
+  const normalizedHeaders = headers.map(h =>
+    h.trim().replace(/\s+/g, ' ').trim()
+  );
+
   // 1. Validate column matching
-  const headerSet = new Set(headers);
+  const headerSet = new Set(normalizedHeaders);
   const missingColumns = tableColumns
-    .filter(col => !headerSet.has(col.name))
+    .filter(col => !headerSet.has(col.name.trim()))
     .map(col => col.name);
 
   if (missingColumns.length > 0) {
@@ -383,7 +388,7 @@ export function validateCSVData(csvRows: string[][], tableColumns: Column[]): Va
   // 2. Create column index map
   const columnMap: Record<string, { index: number; type: ColumnType }> = {};
   tableColumns.forEach(col => {
-    const index = headers.indexOf(col.name);
+    const index = normalizedHeaders.indexOf(col.name.trim());
     if (index !== -1) {
       columnMap[col.id] = { index, type: col.type };
     }
