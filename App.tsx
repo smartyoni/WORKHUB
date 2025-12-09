@@ -1770,7 +1770,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                   className="w-5 h-5 cursor-pointer"
                                 />
                               ) : isFirstCol ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 justify-between">
+                                  <span className={isChecked ? 'text-gray-700 line-through' : 'text-gray-700'}>
+                                    {String(row[col.id] || '-')}
+                                  </span>
                                   <div className="flex flex-col gap-1">
                                     <button
                                       onClick={(e) => {
@@ -1795,9 +1798,6 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                       아래
                                     </button>
                                   </div>
-                                  <span className={isChecked ? 'text-gray-700 line-through' : 'text-gray-700'}>
-                                    {String(row[col.id] || '-')}
-                                  </span>
                                 </div>
                               ) : isChecked ? (
                                 <span className="text-gray-700 line-through">
@@ -2439,7 +2439,10 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                     className="w-5 h-5 cursor-pointer"
                                                   />
                                                 ) : isFirstCol ? (
-                                                  <div className="flex items-center gap-2">
+                                                  <div className="flex items-center gap-2 justify-between">
+                                                    <span className={isChecked ? 'line-through' : ''}>
+                                                      {row[col.id]}
+                                                    </span>
                                                     <div className="flex flex-col gap-1">
                                                       <button
                                                         onClick={(e) => {
@@ -2464,9 +2467,6 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                         아래
                                                       </button>
                                                     </div>
-                                                    <span className={isChecked ? 'line-through' : ''}>
-                                                      {row[col.id]}
-                                                    </span>
                                                   </div>
                                                 ) : isChecked ? (
                                                   <span className="line-through">
