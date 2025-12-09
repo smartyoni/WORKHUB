@@ -178,6 +178,30 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     );
   };
 
+  const moveCategory = (columnId: string, categoryId: string, direction: 'up' | 'down') => {
+    setCategories(
+      categories.map(c => {
+        if (c.columnId !== columnId) return c;
+
+        const items = c.items;
+        const currentIndex = items.findIndex(item => item.id === categoryId);
+
+        if (currentIndex === -1) return c;
+
+        // Check boundaries
+        if (direction === 'up' && currentIndex === 0) return c;
+        if (direction === 'down' && currentIndex === items.length - 1) return c;
+
+        // Swap positions
+        const newItems = [...items];
+        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        [newItems[currentIndex], newItems[targetIndex]] = [newItems[targetIndex], newItems[currentIndex]];
+
+        return { ...c, items: newItems };
+      })
+    );
+  };
+
   const openCategoryManager = (col: Column) => {
     const categoryGroup = getCategoryGroup(col.id);
     if (!categoryGroup) {
@@ -1168,27 +1192,51 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700">카테고리 목록</label>
                 <div className="space-y-1 max-h-96 overflow-y-auto">
-                  {getCategoryGroup(currentEditingCategoryColumn.id)?.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-2 flex-1">
-                        <div
-                          className="w-4 h-4 rounded-full border-2 border-gray-300"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm text-gray-800">{item.name}</span>
-                      </div>
-                      <button
-                        onClick={() => deleteCategory(currentEditingCategoryColumn.id, item.id)}
-                        className="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="카테고리 삭제"
+                  {getCategoryGroup(currentEditingCategoryColumn.id)?.items.map((item, index) => {
+                    const items = getCategoryGroup(currentEditingCategoryColumn.id)?.items || [];
+                    const isFirst = index === 0;
+                    const isLast = index === items.length - 1;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2 flex-1">
+                          <div
+                            className="w-4 h-4 rounded-full border-2 border-gray-300"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-sm text-gray-800">{item.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => moveCategory(currentEditingCategoryColumn.id, item.id, 'up')}
+                            disabled={isFirst}
+                            className="p-1.5 text-gray-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="위로 이동"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => moveCategory(currentEditingCategoryColumn.id, item.id, 'down')}
+                            disabled={isLast}
+                            className="p-1.5 text-gray-300 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="아래로 이동"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteCategory(currentEditingCategoryColumn.id, item.id)}
+                            className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            title="카테고리 삭제"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                   {!getCategoryGroup(currentEditingCategoryColumn.id)?.items.length && (
                     <div className="text-center py-4 text-gray-400 text-sm">
                       추가된 카테고리가 없습니다
