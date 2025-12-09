@@ -284,11 +284,20 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   };
 
   const clearNote = () => {
-    setNoteEditBuffer('');
+    if (isEditingNote) {
+      setNoteEditBuffer('');
+    } else {
+      if (localRow && localRow._notes) {
+        const updatedRow = { ...localRow, _notes: '' };
+        setLocalRow(updatedRow);
+        onUpdate(updatedRow);
+      }
+    }
   };
 
   const copyNote = () => {
-    navigator.clipboard.writeText(noteEditBuffer);
+    const textToCopy = isEditingNote ? noteEditBuffer : (localRow?._notes || '');
+    navigator.clipboard.writeText(textToCopy);
   };
 
   // Mobile Layout - Bottom sheet modal
@@ -654,23 +663,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <div className="flex-1 overflow-hidden flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-gray-700">NOTE</h3>
-                {isEditingNote ? (
-                  <div className="flex gap-1">
+                <div className="flex gap-1">
+                  {isEditingNote ? (
                     <button onClick={saveNote} className="flex items-center gap-1 px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700">
                       <Save className="w-3 h-3" /> 저장
                     </button>
-                    <button onClick={clearNote} className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600" title="초기화">
-                      <RotateCcw className="w-3 h-3" />
+                  ) : (
+                    <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                      <Edit2 className="w-3 h-3" /> 수정
                     </button>
-                    <button onClick={copyNote} className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700" title="복사">
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
-                    <Edit2 className="w-3 h-3" /> 수정
+                  )}
+                  <button onClick={clearNote} className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600" title="초기화">
+                    <RotateCcw className="w-3 h-3" />
                   </button>
-                )}
+                  <button onClick={copyNote} className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700" title="복사">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
               {isEditingNote ? (
                 <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
@@ -1074,23 +1083,23 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
                 NOTE
               </h3>
-              {isEditingNote ? (
-                <div className="flex gap-1">
+              <div className="flex gap-1">
+                {isEditingNote ? (
                   <button onClick={saveNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors shadow-sm">
                     <Save className="w-3.5 h-3.5" /> 저장
                   </button>
-                  <button onClick={clearNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors" title="초기화">
-                    <RotateCcw className="w-3.5 h-3.5" />
+                ) : (
+                  <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
+                    <Edit2 className="w-3.5 h-3.5" /> 수정
                   </button>
-                  <button onClick={copyNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors" title="복사">
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
-                  <Edit2 className="w-3.5 h-3.5" /> 수정
+                )}
+                <button onClick={clearNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors" title="초기화">
+                  <RotateCcw className="w-3.5 h-3.5" />
                 </button>
-              )}
+                <button onClick={copyNote} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors" title="복사">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             {isEditingNote ? (
               <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-4 mt-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
