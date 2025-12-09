@@ -438,7 +438,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                                 className={`text-base font-semibold cursor-pointer select-none block whitespace-pre-wrap break-words ${item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'}`}
                                 onDoubleClick={() => setEditingChecklistId(item.id)}
                             >
-                                {item.text}
+                                {renderNotesWithLinks(item.text)}
                             </span>
                         )}
                       </div>
@@ -1049,7 +1049,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                             item.isChecked ? 'text-gray-400 line-through' : 'text-gray-700'
                           }`}
                         >
-                          {item.text}
+                          {renderNotesWithLinks(item.text)}
                         </span>
                       )}
                     </div>
