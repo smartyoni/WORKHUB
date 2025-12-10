@@ -2533,7 +2533,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                 {visibleColumns.map(col => (
                                     <th
                                         key={col.id}
-                                        className="px-4 py-3 font-medium border-r border-purple-500 last:border-none relative group select-none"
+                                        className="px-4 py-3 font-bold border-r border-purple-500 last:border-none relative group select-none"
                                         style={{ width: col.type === ColumnType.CHECKLIST ? 80 : col.width, minWidth: col.type === ColumnType.CHECKLIST ? 80 : col.width }}
                                     >
                                         <div className="flex items-center justify-between gap-2">
@@ -2616,7 +2616,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                   />
                                                 ) : isFirstCol ? (
                                                   <div className="flex items-center gap-2 justify-between">
-                                                    <span className={isChecked ? 'line-through' : ''}>
+                                                    <span className={`font-medium ${isChecked ? 'line-through' : ''}`}>
                                                       {highlightSearchTerm(String(row[col.id] || ''), searchTerms[activeTableId] || '')}
                                                     </span>
                                                     <div className="flex flex-col gap-1">
@@ -2645,11 +2645,11 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                                                     </div>
                                                   </div>
                                                 ) : isChecked ? (
-                                                  <span className="line-through">
+                                                  <span className="line-through font-medium">
                                                     {highlightSearchTerm(String(row[col.id] || ''), searchTerms[activeTableId] || '')}
                                                   </span>
                                                 ) : (
-                                                  <span>
+                                                  <span className="font-medium">
                                                     {highlightSearchTerm(String(row[col.id] || ''), searchTerms[activeTableId] || '')}
                                                   </span>
                                                 )}
