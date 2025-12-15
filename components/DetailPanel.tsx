@@ -72,6 +72,9 @@ interface DetailPanelProps {
   onClose: () => void;
   onUpdate: (updatedRow: RowData) => void;
   onDeleteRow: (rowId: string) => void;
+  isConfirmModalOpen: boolean;
+  confirmModalMessage: string;
+  confirmModalAction: (() => void) | null;
   setIsConfirmModalOpen: (isOpen: boolean) => void;
   setConfirmModalMessage: (message: string) => void;
   setConfirmModalAction: (action: (() => void) | null) => void;
@@ -90,6 +93,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   onClose,
   onUpdate,
   onDeleteRow,
+  isConfirmModalOpen,
+  confirmModalMessage,
+  confirmModalAction,
   setIsConfirmModalOpen,
   setConfirmModalMessage,
   setConfirmModalAction,
@@ -463,8 +469,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   };
 
   // Confirm Modal Component (using Portal to render outside overflow-hidden parent)
+  // Only render on mobile since desktop uses App.tsx's modal
   const ConfirmModal = () => {
-    if (!isConfirmModalOpen) return null;
+    if (!isMobile || !isConfirmModalOpen) return null;
 
     return createPortal(
       <div

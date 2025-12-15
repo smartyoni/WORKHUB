@@ -1988,6 +1988,9 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                     setIsDetailPanelModal(false);
                     setSelectedRowId(null);
                   }}
+                  isConfirmModalOpen={isConfirmModalOpen}
+                  confirmModalMessage={confirmModalMessage}
+                  confirmModalAction={confirmModalAction}
                   setIsConfirmModalOpen={setIsConfirmModalOpen}
                   setConfirmModalMessage={setConfirmModalMessage}
                   setConfirmModalAction={setConfirmModalAction}
@@ -2709,6 +2712,9 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
             onClose={() => setSelectedRowId(null)}
             onUpdate={updateRow}
             onDeleteRow={handleDeleteRow}
+            isConfirmModalOpen={isConfirmModalOpen}
+            confirmModalMessage={confirmModalMessage}
+            confirmModalAction={confirmModalAction}
             setIsConfirmModalOpen={setIsConfirmModalOpen}
             setConfirmModalMessage={setConfirmModalMessage}
             setConfirmModalAction={setConfirmModalAction}
