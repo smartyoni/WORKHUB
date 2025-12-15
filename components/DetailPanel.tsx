@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem, GanttTask } from '../types';
 import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft, Copy, RotateCcw, StickyNote } from 'lucide-react';
 import GanttView from './GanttView';
@@ -369,27 +370,27 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   if (isMobile) {
     return (
       <>
-      <div className="w-full flex flex-col h-full bg-white overflow-y-auto overflow-x-hidden">
-        {/* Mobile Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10 shrink-0">
-          <h2 className="text-base font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={() => {
-                if (confirm("이 행을 삭제하시겠습니까?")) {
-                  onDeleteRow(localRow.id);
-                }
-              }}
-              className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 shrink-0"
-              title="이 행 삭제"
-            >
-              삭제
-            </button>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
+        <div className="w-full flex flex-col h-full bg-white overflow-y-auto overflow-x-hidden">
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10 shrink-0">
+            <h2 className="text-base font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => {
+                  if (confirm("이 행을 삭제하시겠습니까?")) {
+                    onDeleteRow(localRow.id);
+                  }
+                }}
+                className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 shrink-0"
+                title="이 행 삭제"
+              >
+                삭제
+              </button>
+              <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Mobile Tab Navigation */}
         <div className="flex border-b border-gray-200 bg-white">
@@ -780,88 +781,93 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             />
           )}
         </div>
-      </div>
-
-      {/* Checklist Note Modal - 모바일에서 overflow 밖에 렌더링 */}
-      {isNoteModalOpen && editingNoteChecklistId && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4"
-          onClick={closeChecklistNoteModal}
-        >
-          <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800">체크리스트 메모</h3>
-              <button
-                onClick={closeChecklistNoteModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Checklist Preview */}
-            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {localRow?._checklists.find(c => c.id === editingNoteChecklistId)?.text}
-              </p>
-            </div>
-
-            {/* Textarea */}
-            <div className="flex-1 p-6 overflow-y-auto">
-              <textarea
-                autoFocus
-                value={checklistNoteBuffer}
-                onChange={(e) => setChecklistNoteBuffer(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    saveChecklistNote();
-                  } else if (e.key === 'Escape') {
-                    closeChecklistNoteModal();
-                  }
-                }}
-                className="w-full h-full min-h-[200px] p-4 border-2 border-orange-300 rounded-md
-                           text-sm focus:outline-none focus:border-orange-500 resize-none"
-                placeholder="메모를 입력하세요..."
-              />
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
-              <button
-                onClick={clearChecklistNote}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                           text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4 inline mr-1" />
-                초기화
-              </button>
-              <button
-                onClick={closeChecklistNoteModal}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                           text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={saveChecklistNote}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
-                           font-medium hover:bg-orange-700 transition-colors shadow-sm"
-              >
-                <Save className="w-4 h-4 inline mr-1" />
-                저장
-              </button>
-            </div>
-          </div>
         </div>
-      )}
       </>
     );
   }
+
+  // Memo Modal Component (using Portal to render outside overflow-hidden parent)
+  const MemoModal = () => {
+    if (!isNoteModalOpen || !editingNoteChecklistId) return null;
+
+    return createPortal(
+      <div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4"
+        onClick={closeChecklistNoteModal}
+      >
+        <div
+          className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-800">체크리스트 메모</h3>
+            <button
+              onClick={closeChecklistNoteModal}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          {/* Checklist Preview */}
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {localRow?._checklists.find(c => c.id === editingNoteChecklistId)?.text}
+            </p>
+          </div>
+
+          {/* Textarea */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <textarea
+              autoFocus
+              value={checklistNoteBuffer}
+              onChange={(e) => setChecklistNoteBuffer(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  e.preventDefault();
+                  saveChecklistNote();
+                } else if (e.key === 'Escape') {
+                  closeChecklistNoteModal();
+                }
+              }}
+              className="w-full h-full min-h-[200px] p-4 border-2 border-orange-300 rounded-md
+                         text-sm focus:outline-none focus:border-orange-500 resize-none"
+              placeholder="메모를 입력하세요..."
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
+            <button
+              onClick={clearChecklistNote}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                         text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4 inline mr-1" />
+              초기화
+            </button>
+            <button
+              onClick={closeChecklistNoteModal}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                         text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              취소
+            </button>
+            <button
+              onClick={saveChecklistNote}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
+                         font-medium hover:bg-orange-700 transition-colors shadow-sm"
+            >
+              <Save className="w-4 h-4 inline mr-1" />
+              저장
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
 
   // Desktop Layout - Side panel
   return (
@@ -1493,83 +1499,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
       )}
 
-      {/* Checklist Note Modal - 데스크톱 */}
-      {isNoteModalOpen && editingNoteChecklistId && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4"
-          onClick={closeChecklistNoteModal}
-        >
-          <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800">체크리스트 메모</h3>
-              <button
-                onClick={closeChecklistNoteModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Checklist Preview */}
-            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {localRow?._checklists.find(c => c.id === editingNoteChecklistId)?.text}
-              </p>
-            </div>
-
-            {/* Textarea */}
-            <div className="flex-1 p-6 overflow-y-auto">
-              <textarea
-                autoFocus
-                value={checklistNoteBuffer}
-                onChange={(e) => setChecklistNoteBuffer(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    saveChecklistNote();
-                  } else if (e.key === 'Escape') {
-                    closeChecklistNoteModal();
-                  }
-                }}
-                className="w-full h-full min-h-[200px] p-4 border-2 border-orange-300 rounded-md
-                           text-sm focus:outline-none focus:border-orange-500 resize-none"
-                placeholder="메모를 입력하세요..."
-              />
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
-              <button
-                onClick={clearChecklistNote}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                           text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4 inline mr-1" />
-                초기화
-              </button>
-              <button
-                onClick={closeChecklistNoteModal}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                           text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={saveChecklistNote}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
-                           font-medium hover:bg-orange-700 transition-colors shadow-sm"
-              >
-                <Save className="w-4 h-4 inline mr-1" />
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Memo Modal (Portal-based, works for both mobile and desktop) */}
+      <MemoModal />
     </div>
   );
 };
