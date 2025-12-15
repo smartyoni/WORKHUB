@@ -462,6 +462,45 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     );
   };
 
+  // Confirm Modal Component (using Portal to render outside overflow-hidden parent)
+  const ConfirmModal = () => {
+    if (!isConfirmModalOpen) return null;
+
+    return createPortal(
+      <div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] backdrop-blur-sm"
+        onClick={() => { setIsConfirmModalOpen(false); setConfirmModalAction(null); }}
+      >
+        <div
+          className="bg-white rounded-xl shadow-2xl w-96 animate-in zoom-in duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800">확인</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-gray-700 whitespace-pre-wrap">{confirmModalMessage}</p>
+          </div>
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-xl">
+            <button
+              onClick={() => { setIsConfirmModalOpen(false); setConfirmModalAction(null); }}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              취소
+            </button>
+            <button
+              onClick={() => { if (confirmModalAction) confirmModalAction(); }}
+              className="px-4 py-2 text-sm bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
   // Mobile Layout - Bottom sheet modal
   if (isMobile) {
     return (
@@ -876,6 +915,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
 
       <MemoModal />
+      <ConfirmModal />
       </>
     );
   }
@@ -1508,6 +1548,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       {/* Memo Modal (Portal-based, works for both mobile and desktop) */}
       <MemoModal />
+      <ConfirmModal />
     </div>
   );
 };
