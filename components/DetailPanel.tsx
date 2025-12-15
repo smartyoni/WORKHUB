@@ -509,7 +509,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       </div>
                       <button
                         onClick={() => openChecklistNoteModal(item.id)}
-                        className="p-2 text-gray-400 hover:text-orange-500 shrink-0 transition-colors -mx-2"
+                        className="p-2 text-gray-400 hover:text-orange-500 shrink-0 transition-colors"
                         title={item.note ? "메모 보기/수정" : "메모 추가"}
                         aria-label={item.note ? "메모 보기/수정" : "메모 추가"}
                       >
@@ -519,7 +519,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       </button>
                       <button
                         onClick={() => deleteChecklist(item.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 shrink-0 transition-colors -mx-2"
+                        className="p-2 text-gray-400 hover:text-red-500 shrink-0 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
