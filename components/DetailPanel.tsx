@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem, GanttTask } from '../types';
-import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft, Copy, RotateCcw } from 'lucide-react';
+import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft, Copy, RotateCcw, StickyNote } from 'lucide-react';
 import GanttView from './GanttView';
 
 /**
@@ -108,6 +108,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   // Note Tab State
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [noteEditBuffer, setNoteEditBuffer] = useState('');
+
+  // Checklist Note Modal State
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [editingNoteChecklistId, setEditingNoteChecklistId] = useState<string | null>(null);
+  const [checklistNoteBuffer, setChecklistNoteBuffer] = useState('');
 
   // Category Management State
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -271,7 +276,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   const deleteChecklist = (id: string) => {
     setConfirmModalMessage("이 체크리스트를 삭제하시겠습니까?");
-    setConfirmModalAction(() => {
+    setConfirmModalAction(() => () => {
       if (!localRow) return;
       const updatedChecklists = localRow._checklists.filter(item => item.id !== id);
       const updatedRow = { ...localRow, _checklists: updatedChecklists };
@@ -297,6 +302,42 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     const updatedRow = { ...localRow, _checklists: updatedChecklists };
     setLocalRow(updatedRow);
     onUpdate(updatedRow);
+  };
+
+  // Checklist Note Functions
+  const openChecklistNoteModal = (checklistId: string) => {
+    const item = localRow?._checklists.find(c => c.id === checklistId);
+    if (!item) return;
+
+    setEditingNoteChecklistId(checklistId);
+    setChecklistNoteBuffer(item.note || '');
+    setIsNoteModalOpen(true);
+  };
+
+  const saveChecklistNote = () => {
+    if (!localRow || !editingNoteChecklistId) return;
+
+    const updatedChecklists = localRow._checklists.map(item =>
+      item.id === editingNoteChecklistId
+        ? { ...item, note: checklistNoteBuffer.trim() }
+        : item
+    );
+
+    const updatedRow = { ...localRow, _checklists: updatedChecklists };
+    setLocalRow(updatedRow);
+    onUpdate(updatedRow);
+
+    closeChecklistNoteModal();
+  };
+
+  const closeChecklistNoteModal = () => {
+    setIsNoteModalOpen(false);
+    setEditingNoteChecklistId(null);
+    setChecklistNoteBuffer('');
+  };
+
+  const clearChecklistNote = () => {
+    setChecklistNoteBuffer('');
   };
 
   const saveNote = () => {
@@ -467,10 +508,20 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         )}
                       </div>
                       <button
-                        onClick={() => deleteChecklist(item.id)}
-                        className="text-gray-400 hover:text-red-500 shrink-0 transition-colors"
+                        onClick={() => openChecklistNoteModal(item.id)}
+                        className="p-2 text-gray-400 hover:text-orange-500 shrink-0 transition-colors -mx-2"
+                        title={item.note ? "메모 보기/수정" : "메모 추가"}
+                        aria-label={item.note ? "메모 보기/수정" : "메모 추가"}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <StickyNote
+                          className={`w-4 h-4 ${item.note ? 'text-orange-500 fill-orange-200' : 'text-gray-400'}`}
+                        />
+                      </button>
+                      <button
+                        onClick={() => deleteChecklist(item.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 shrink-0 transition-colors -mx-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1077,6 +1128,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         </span>
                       )}
                     </div>
+
+                    {/* Memo Button */}
+                    <button
+                      onClick={() => openChecklistNoteModal(item.id)}
+                      className="text-gray-400 hover:text-orange-500 transition-colors shrink-0"
+                      title={item.note ? "메모 보기/수정" : "메모 추가"}
+                      aria-label={item.note ? "메모 보기/수정" : "메모 추가"}
+                    >
+                      <StickyNote
+                        className={`w-3.5 h-3.5 ${item.note ? 'text-orange-500 fill-orange-200' : 'text-gray-400'}`}
+                      />
+                    </button>
+
                     <button
                       onClick={() => deleteChecklist(item.id)}
                       className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
@@ -1257,6 +1321,84 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checklist Note Modal */}
+      {isNoteModalOpen && editingNoteChecklistId && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4"
+          onClick={closeChecklistNoteModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800">체크리스트 메모</h3>
+              <button
+                onClick={closeChecklistNoteModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Checklist Preview */}
+            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+              <p className="text-sm text-gray-600 line-clamp-2">
+                {localRow?._checklists.find(c => c.id === editingNoteChecklistId)?.text}
+              </p>
+            </div>
+
+            {/* Textarea */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              <textarea
+                autoFocus
+                value={checklistNoteBuffer}
+                onChange={(e) => setChecklistNoteBuffer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    saveChecklistNote();
+                  } else if (e.key === 'Escape') {
+                    closeChecklistNoteModal();
+                  }
+                }}
+                className="w-full h-full min-h-[200px] p-4 border-2 border-orange-300 rounded-md
+                           text-sm focus:outline-none focus:border-orange-500 resize-none"
+                placeholder="메모를 입력하세요..."
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
+              <button
+                onClick={clearChecklistNote}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                           text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4 inline mr-1" />
+                초기화
+              </button>
+              <button
+                onClick={closeChecklistNoteModal}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                           text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={saveChecklistNote}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
+                           font-medium hover:bg-orange-700 transition-colors shadow-sm"
+              >
+                <Save className="w-4 h-4 inline mr-1" />
+                저장
               </button>
             </div>
           </div>

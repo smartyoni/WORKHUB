@@ -46,13 +46,8 @@ export interface ChecklistItem {
   id: string;
   text: string;
   isChecked: boolean;
+  note?: string;
   replies: Reply[];
-}
-
-export interface ChecklistItem {
-  id: string;
-  text: string;
-  isChecked: boolean;
 }
 
 export interface GanttTask {
