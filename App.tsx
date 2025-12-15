@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
@@ -3169,9 +3170,9 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
         </>
       )}
 
-      {/* Custom Confirmation Modal */}
-      {isConfirmModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[101] backdrop-blur-sm">
+      {/* Custom Confirmation Modal - Using Portal to render outside modal stack */}
+      {isConfirmModalOpen && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-2xl w-96 animate-in zoom-in duration-200">
                 <div className="p-6 border-b border-gray-100">
                     <h3 className="text-lg font-bold text-gray-800">확인</h3>
@@ -3194,7 +3195,8 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Add Column Modal */}

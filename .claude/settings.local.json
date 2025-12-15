@@ -35,7 +35,12 @@
       "WebSearch",
       "Bash(git checkout:*)",
       "Bash(git fetch:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git revert:*)",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force 2>&1; Start-Sleep -Seconds 1\")",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force 2>&1; Start-Sleep -Seconds 2; Write-Host ''Node processes terminated''\")",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force 2>&1; Start-Sleep -Seconds 2\")",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
