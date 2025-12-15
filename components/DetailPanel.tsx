@@ -508,30 +508,28 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         )}
                       </div>
                       <button
-                        onClick={() => openChecklistNoteModal(item.id)}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
+                        onClick={(e) => {
+                          e.stopPropagation();
                           openChecklistNoteModal(item.id);
                         }}
-                        className="relative z-10 p-2 text-gray-400 hover:text-orange-500 shrink-0 transition-colors"
+                        className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-orange-500 shrink-0 transition-colors"
                         title={item.note ? "메모 보기/수정" : "메모 추가"}
                         aria-label={item.note ? "메모 보기/수정" : "메모 추가"}
                         type="button"
                       >
                         <StickyNote
-                          className={`w-4 h-4 ${item.note ? 'text-orange-500 fill-orange-200' : 'text-gray-400'}`}
+                          className={`w-5 h-5 ${item.note ? 'text-orange-500 fill-orange-200' : 'text-gray-400'}`}
                         />
                       </button>
                       <button
-                        onClick={() => deleteChecklist(item.id)}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
+                        onClick={(e) => {
+                          e.stopPropagation();
                           deleteChecklist(item.id);
                         }}
-                        className="relative z-10 p-2 text-gray-400 hover:text-red-500 shrink-0 transition-colors"
+                        className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-red-500 shrink-0 transition-colors"
                         type="button"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
