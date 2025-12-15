@@ -1332,12 +1332,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </button>
             </div>
           </div>
-        </div>
-      </>
-      )}
-
-        {/* Checklist Note Modal - 모바일 (스크롤 컨테이너 바깥에 배치) */}
-        {isMobile && isNoteModalOpen && editingNoteChecklistId && (
+        {/* Checklist Note Modal - 모바일 */}
+        {isNoteModalOpen && editingNoteChecklistId && (
           <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4"
             onClick={closeChecklistNoteModal}
@@ -1413,6 +1409,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </div>
           </div>
         )}
+        </div>
+      )}
 
       {/* Checklist Note Modal - 데스크톱 */}
       {isNoteModalOpen && editingNoteChecklistId && (
