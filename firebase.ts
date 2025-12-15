@@ -70,6 +70,13 @@ export const initDB = async (): Promise<void> => {
 export const saveTables = async (tables: TableDefinition[]): Promise<void> => {
   try {
     await ensureAuth();
+
+    // 안전장치: 빈 배열 저장 방지 (데이터 손실 방지)
+    if (tables.length === 0) {
+      console.warn('[SAFETY] Attempted to save empty tables array - skipping to prevent data loss');
+      return;
+    }
+
     const batch = writeBatch(db);
     const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.TABLES}`);
 
@@ -86,7 +93,7 @@ export const saveTables = async (tables: TableDefinition[]): Promise<void> => {
     });
 
     await batch.commit();
-    console.log('Tables saved successfully');
+    console.log(`[Firebase] Tables saved successfully: ${tables.length} items`);
   } catch (error) {
     console.error('Failed to save tables:', error);
     throw error;
@@ -116,6 +123,13 @@ export const loadTables = async (): Promise<TableDefinition[]> => {
 export const saveBookmarks = async (bookmarks: BookmarkGroup[]): Promise<void> => {
   try {
     await ensureAuth();
+
+    // 안전장치: 빈 배열 저장 방지 (데이터 손실 방지)
+    if (bookmarks.length === 0) {
+      console.warn('[SAFETY] Attempted to save empty bookmarks array - skipping to prevent data loss');
+      return;
+    }
+
     const batch = writeBatch(db);
     const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.BOOKMARKS}`);
 
@@ -132,7 +146,7 @@ export const saveBookmarks = async (bookmarks: BookmarkGroup[]): Promise<void> =
     });
 
     await batch.commit();
-    console.log('Bookmarks saved successfully');
+    console.log(`[Firebase] Bookmarks saved successfully: ${bookmarks.length} items`);
   } catch (error) {
     console.error('Failed to save bookmarks:', error);
     throw error;
@@ -162,6 +176,13 @@ export const loadBookmarks = async (): Promise<BookmarkGroup[]> => {
 export const saveFilters = async (filters: CustomFilter[]): Promise<void> => {
   try {
     await ensureAuth();
+
+    // 안전장치: 빈 배열 저장 방지 (데이터 손실 방지)
+    if (filters.length === 0) {
+      console.warn('[SAFETY] Attempted to save empty filters array - skipping to prevent data loss');
+      return;
+    }
+
     const batch = writeBatch(db);
     const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.FILTERS}`);
 
@@ -178,7 +199,7 @@ export const saveFilters = async (filters: CustomFilter[]): Promise<void> => {
     });
 
     await batch.commit();
-    console.log('Filters saved successfully');
+    console.log(`[Firebase] Filters saved successfully: ${filters.length} items`);
   } catch (error) {
     console.error('Failed to save filters:', error);
     throw error;
@@ -264,6 +285,13 @@ export const migrateTableNameToTODAY = async (): Promise<void> => {
 export const saveCategories = async (categories: CategoryGroup[]): Promise<void> => {
   try {
     await ensureAuth();
+
+    // 안전장치: 빈 배열 저장 방지 (데이터 손실 방지)
+    if (categories.length === 0) {
+      console.warn('[SAFETY] Attempted to save empty categories array - skipping to prevent data loss');
+      return;
+    }
+
     const batch = writeBatch(db);
     const collectionRef = collection(db, `users/${USER_DOC}/${COLLECTIONS.CATEGORIES}`);
 
@@ -280,7 +308,7 @@ export const saveCategories = async (categories: CategoryGroup[]): Promise<void>
     });
 
     await batch.commit();
-    console.log('Categories saved successfully');
+    console.log(`[Firebase] Categories saved successfully: ${categories.length} items`);
   } catch (error) {
     console.error('Failed to save categories:', error);
     throw error;

@@ -12,16 +12,23 @@ const InstallPrompt: React.FC = () => {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('beforeinstallprompt event fired');
+      console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+
+      // localStorage에 이전 거부 기록이 없으면 표시
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (!dismissed) {
+        console.log('[PWA] Showing install banner');
+        setShowInstallBanner(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    console.log('beforeinstallprompt listener attached');
+    console.log('[PWA] beforeinstallprompt listener attached');
 
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('App is in standalone mode');
+      console.log('[PWA] App is in standalone mode');
       setShowInstallBanner(false);
     }
 
@@ -45,7 +52,9 @@ const InstallPrompt: React.FC = () => {
   };
 
   const handleDismiss = () => {
+    console.log('[PWA] Install banner dismissed');
     setShowInstallBanner(false);
+    localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
   if (!showInstallBanner) return null;

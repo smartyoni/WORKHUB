@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
 import InstallPrompt from './components/InstallPrompt';
+import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, ValidationResult, parseCSV, validateCSVData, CategoryGroup, CategoryItem } from './types';
 import { initDB as initFirebaseDB, saveBookmarks, saveFilters, loadAllData as loadAllDataFromFirebase, saveTables as saveTablesFirebase, migrateTableNameToTODAY, saveCategories } from './firebase';
 import {
@@ -2142,6 +2143,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 font-sans overflow-hidden">
       <InstallPrompt />
+      <UpdatePrompt />
 
       {/* 1. Header Area */}
       {!isMobile && (
