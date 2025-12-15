@@ -276,6 +276,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   };
 
   const deleteChecklist = (id: string) => {
+    console.log('deleteChecklist 호출됨:', id);
     setConfirmModalMessage("이 체크리스트를 삭제하시겠습니까?");
     setConfirmModalAction(() => () => {
       if (!localRow) return;
@@ -285,6 +286,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       onUpdate(updatedRow);
       setIsConfirmModalOpen(false);
     });
+    console.log('setIsConfirmModalOpen(true) 호출');
+    setIsConfirmModalOpen(true);
+  };
+
+  const deleteRow = () => {
+    console.log('deleteRow 호출됨');
+    setConfirmModalMessage("이 행을 삭제하시겠습니까?");
+    setConfirmModalAction(() => () => {
+      onDeleteRow(localRow!.id);
+      setIsConfirmModalOpen(false);
+    });
+    console.log('setIsConfirmModalOpen(true) 호출');
     setIsConfirmModalOpen(true);
   };
 
@@ -459,11 +472,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <h2 className="text-base font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
             <div className="flex items-center gap-2 ml-auto">
               <button
-                onClick={() => {
-                  if (confirm("이 행을 삭제하시겠습니까?")) {
-                    onDeleteRow(localRow.id);
-                  }
-                }}
+                onClick={deleteRow}
                 className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 shrink-0"
                 title="이 행 삭제"
               >
@@ -883,11 +892,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         <h2 className="text-lg font-bold text-gray-800">{localRow[columns[0]?.id] || '-'}</h2>
         <div className="flex items-center gap-2">
             <button
-                onClick={() => {
-                  if (confirm("이 행을 삭제하시겠습니까?")) {
-                    onDeleteRow(localRow.id);
-                  }
-                }}
+                onClick={deleteRow}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors shadow-sm shrink-0"
                 title="이 행 삭제"
             >
