@@ -32,84 +32,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-
-    <!-- Service Worker 즉시 제거 (head에서 동기적으로 실행) -->
-    <script>
-      // 페이지 로드 전에 Service Worker 제거
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          console.log('Found ' + registrations.length + ' Service Workers');
-          registrations.forEach(registration => {
-            console.log('Unregistering SW:', registration.scope);
-            registration.unregister().then(() => {
-              console.log('Successfully unregistered');
-            }).catch(err => {
-              console.log('Error unregistering:', err);
-            });
-          });
-        }).catch(err => {
-          console.log('Error getting registrations:', err);
-        });
-      }
-
-      // IndexedDB와 모든 캐시 삭제
-      if ('indexedDB' in window) {
-        const dbs = ['workbox-cache', 'google-fonts-cache', 'gstatic-fonts-cache', 'app-cache'];
-        dbs.forEach(dbName => {
-          const request = window.indexedDB.deleteDatabase(dbName);
-          request.onsuccess = () => console.log('Deleted DB:', dbName);
-          request.onerror = () => console.log('Error deleting DB:', dbName);
-        });
-      }
-
-      // 캐시 스토리지 완전 삭제
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          console.log('Found caches:', cacheNames);
-          Promise.all(
-            cacheNames.map(cacheName => {
-              console.log('Deleting cache:', cacheName);
-              return caches.delete(cacheName);
-            })
-          );
-        });
-      }
-
-      // LocalStorage와 SessionStorage 삭제 (필요시)
-      try {
-        localStorage.clear();
-        sessionStorage.clear();
-        console.log('Cleared storage');
-      } catch (e) {
-        console.log('Error clearing storage:', e);
-      }
-    </script>
-    <script type="module" crossorigin src="/WORKHUB/assets/index-B3SfZQtA.js"></script>
-    <link rel="stylesheet" crossorigin href="/WORKHUB/assets/index-D2Y5mSte.css">
-  </head>
+    <script type="module" crossorigin src="/WORKHUB/assets/index-BwV6lejB.js"></script>
+    <link rel="stylesheet" crossorigin href="/WORKHUB/assets/index-DVf87Gt1.css">
+  <link rel="manifest" href="/WORKHUB/manifest.webmanifest"></head>
   <body>
     <div id="root"></div>
-
-    <!-- Service Worker 강제 제거 스크립트 -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for (let registration of registrations) {
-            registration.unregister();
-            console.log('Service Worker unregistered:', registration);
-          }
-        });
-      }
-
-      // 캐시 완전 삭제
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => {
-            caches.delete(cacheName);
-            console.log('Cache deleted:', cacheName);
-          });
-        });
-      }
-    </script>
   </body>
 </html>
