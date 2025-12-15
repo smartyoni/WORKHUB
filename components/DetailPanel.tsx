@@ -509,6 +509,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       </div>
                       <button
                         onClick={(e) => {
+                          console.log('모바일 메모 버튼 클릭:', item.id);
                           e.stopPropagation();
                           openChecklistNoteModal(item.id);
                         }}
