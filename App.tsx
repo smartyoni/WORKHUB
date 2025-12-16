@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Header from './components/Header';
 import DetailPanel from './components/DetailPanel';
+import { CurrentTime } from './components/CurrentTime';
 import InstallPrompt from './components/InstallPrompt';
 import UpdatePrompt from './components/UpdatePrompt';
 import { TableDefinition, Column, ColumnType, RowData, BookmarkGroup, CustomFilter, FilterCondition, FilterOperator, FilterTarget, FilterTargetType, ValidationResult, parseCSV, validateCSVData, CategoryGroup, CategoryItem } from './types';
@@ -155,9 +156,6 @@ export default function App() {
   const [touchStartX, setTouchStartX] = useState(0);
   const [isDetailPanelModal, setIsDetailPanelModal] = useState(false);
 
-  // --- CURRENT TIME STATE ---
-  const [currentTime, setCurrentTime] = useState(new Date());
-
   // --- CSV UPLOAD STATE ---
   const [isCSVUploadModalOpen, setIsCSVUploadModalOpen] = useState(false);
   const [csvValidationResult, setCSVValidationResult] = useState<ValidationResult | null>(null);
@@ -273,27 +271,6 @@ export default function App() {
       recent: recent.map(d => ({ date: d.date, displayDate: d.displayDate, count: d.count })),
       monthGroups
     };
-  };
-
-  // --- CURRENT TIME UPDATE ---
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // 날짜와 시간 포맷 함수
-  const formatCurrentDateTime = (): string => {
-    const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-    const year = currentTime.getFullYear();
-    const month = currentTime.getMonth() + 1;
-    const date = currentTime.getDate();
-    const dayName = days[currentTime.getDay()];
-    const hours = String(currentTime.getHours()).padStart(2, '0');
-    const minutes = String(currentTime.getMinutes()).padStart(2, '0');
-
-    return `${year}년 ${month}월 ${date}일 ${hours}:${minutes} ${dayName}`;
   };
 
   // --- FIREBASE INITIALIZATION & DATA LOADING ---
@@ -1518,7 +1495,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
             <Menu className="w-5 h-5" />
           </button>
           <div className="text-red-600 font-bold text-xs whitespace-nowrap overflow-hidden text-center flex-1">
-            {formatCurrentDateTime()}
+            <CurrentTime />
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -2288,7 +2265,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
                       {activeTable?.name}
                     </h1>
                     <div className="text-2xl font-bold text-red-600">
-                      {formatCurrentDateTime()}
+                      <CurrentTime />
                     </div>
                   </div>
                 )}
