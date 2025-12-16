@@ -35,110 +35,11 @@ import {
   Menu
 } from 'lucide-react';
 
-// --- 색상 팔레트 정의 (선명하고 생생한 색상) ---
-const BOOKMARK_COLORS = [
-  { id: 'blue', name: '파랑', hex: '#3B82F6' },
-  { id: 'orange', name: '주황', hex: '#F97316' },
-  { id: 'green', name: '초록', hex: '#10B981' },
-  { id: 'pink', name: '분홍', hex: '#EC4899' },
-  { id: 'purple', name: '보라', hex: '#A855F7' },
-  { id: 'yellow', name: '노랑', hex: '#FBBF24' },
-  { id: 'lime', name: '라임', hex: '#84CC16' },
-  { id: 'cyan', name: '하늘', hex: '#06B6D4' },
-  { id: 'gray', name: '회색', hex: '#9CA3AF' },
-];
-
-// --- 미분류 카테고리 마커 ---
-const UNCATEGORIZED_MARKER = '__UNCATEGORIZED__';
-
-// --- MOCK DATA INITIALIZATION ---
-const initialBookmarkGroups: BookmarkGroup[] = [
-  {
-    id: 'group-1',
-    name: '영역1',
-    color: '#FBBF24',
-    area: 1,
-    items: [
-      { id: '1', name: '호실관리', url: '' },
-      { id: '2', name: '호실수정', url: '' },
-      { id: '3', name: '호실시트', url: '' },
-      { id: '4', name: '북클립바', url: '' },
-      { id: '5', name: '네이버웍스', url: '' },
-      { id: '6', name: '주차정산', url: '' },
-    ],
-  },
-  {
-    id: 'group-2',
-    name: '영역2',
-    color: '#3B82F6',
-    area: 2,
-    items: [
-      { id: '1', name: '등기소', url: '' },
-      { id: '2', name: '정부24', url: '' },
-      { id: '3', name: '토지이음', url: '' },
-      { id: '4', name: '정보광장', url: '' },
-    ],
-  },
-  {
-    id: 'group-3',
-    name: '영역3',
-    color: '#F97316',
-    area: 3,
-    items: [
-      { id: '1', name: '원부장님계약', url: '' },
-      { id: '2', name: '건강보험', url: '' },
-      { id: '3', name: '네이버메일', url: '' },
-      { id: '4', name: 'KB시세', url: '' },
-    ],
-  },
-  {
-    id: 'group-4',
-    name: '영역4',
-    color: '#10B981',
-    area: 4,
-    items: [
-      { id: '1', name: '깃허브', url: '' },
-      { id: '2', name: 'AI스튜디오', url: '' },
-      { id: '3', name: '구글시트', url: '' },
-      { id: '4', name: 'GPT', url: '' },
-    ],
-  },
-];
-
-// --- CONSTANTS ---
-const TODAY_TABLE_NAMES = ['TODAY', '오늘 기록'];
-
-const getTodayTableId = (tables: TableDefinition[]): string | null => {
-  return tables.find(t => TODAY_TABLE_NAMES.includes(t.name))?.id || null;
-};
-
-const sortTablesByTodayFirst = (tables: TableDefinition[]): TableDefinition[] => {
-  const todayTable = tables.find(t => TODAY_TABLE_NAMES.includes(t.name));
-  const otherTables = tables.filter(t => !TODAY_TABLE_NAMES.includes(t.name));
-  return todayTable ? [todayTable, ...otherTables] : tables;
-};
-
-const initialTablesUnsorted: TableDefinition[] = [
-  {
-    id: 'table-2',
-    name: 'TODAY',
-    columns: [
-      { id: 'col-1', name: '기록일', type: ColumnType.DATE_AUTO, width: 120 },
-      { id: 'col-2', name: '제목', type: ColumnType.TEXT, width: 200 },
-      { id: 'col-3', name: '기록시각', type: ColumnType.TIME_AUTO, width: 120 },
-    ],
-    rows: Array.from({ length: 8 }).map((_, i) => ({
-      id: `row-today-${i}`,
-      'col-1': `2025-12-${String(2 - Math.floor(i / 2)).padStart(2, '0')}`,
-      'col-2': i === 0 ? '아침 회의' : i === 1 ? '메일 응답' : i === 2 ? '프로젝트 진행' : i === 3 ? '고객 면담' : i === 4 ? '사무 처리' : i === 5 ? '데이터 정리' : i === 6 ? '회의록 작성' : '일일 보고',
-      'col-3': `${String(9 + Math.floor(i / 2)).padStart(2, '0')}:${String(i * 10).padStart(2, '0')}`,
-      _memo: '',
-      _checklists: [],
-      _ganttTasks: [],
-      _notes: '',
-    })),
-  },
-];
+// ============ Phase 1: Constants & Utilities ============
+import { BOOKMARK_COLORS } from './constants/colors';
+import { TODAY_TABLE_NAMES, UNCATEGORIZED_MARKER, MAX_SEARCH_HISTORY } from './constants/app';
+import { initialBookmarkGroups, initialTablesUnsorted } from './constants/mockData';
+import { getTodayTableId, sortTablesByTodayFirst } from './utils/tableHelpers';
 
 // TODAY 테이블이 항상 첫 번째가 되도록 정렬
 const initialTables = sortTablesByTodayFirst(initialTablesUnsorted);
