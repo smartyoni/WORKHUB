@@ -861,7 +861,7 @@ const evaluateChecklistFilter = (row: RowData, condition: FilterCondition): bool
       if (!activeTable) return;
 
       setConfirmModalMessage(`'${activeTable.name}' 테이블에서 이 행을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
-      setConfirmModalAction(() => () => { // Wrap the action in another function to avoid immediate execution
+      setConfirmModalAction(() => {
           const updatedRows = activeTable.rows.filter(row => row.id !== rowIdToDelete);
           setTables(prev => prev.map(t =>
               t.id === activeTable.id ? { ...t, rows: updatedRows } : t
