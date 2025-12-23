@@ -142,6 +142,15 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setNoteEditBuffer('');
   }, [activeTab, row?.id]);
 
+  // Handle memo textarea focus when entering edit mode
+  useEffect(() => {
+    if (isNoteModalOpen && !isNotePreviewing) {
+      setTimeout(() => {
+        noteTextareaRef.current?.focus();
+      }, 0);
+    }
+  }, [isNoteModalOpen, isNotePreviewing]);
+
   if (!localRow || !isOpen) return null;
 
   const handleInfoChange = (field: string, value: any) => {
@@ -340,10 +349,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   const enterEditMode = () => {
     setIsNotePreviewing(false);
-    // Focus on textarea after state update
-    setTimeout(() => {
-      noteTextareaRef.current?.focus();
-    }, 0);
+    // Focus is handled by useEffect
   };
 
   const exitEditMode = () => {
@@ -447,7 +453,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               // Edit Mode
               <textarea
                 ref={noteTextareaRef}
-                autoFocus
                 value={checklistNoteBuffer}
                 onChange={(e) => setChecklistNoteBuffer(e.target.value)}
                 onKeyDown={(e) => {
@@ -1555,7 +1560,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                   // Edit Mode
                   <textarea
                     ref={noteTextareaRef}
-                    autoFocus
                     value={checklistNoteBuffer}
                     onChange={(e) => setChecklistNoteBuffer(e.target.value)}
                     onKeyDown={(e) => {
