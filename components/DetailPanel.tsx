@@ -152,14 +152,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     });
     if (isNoteModalOpen && !isNotePreviewing) {
       setTimeout(() => {
-        console.log('[메모모달] textarea에 포커스 설정 시도');
-        noteTextareaRef.current?.focus();
+        console.log('[메모모달] textarea에 포커스 및 값 설정 시도');
+        if (noteTextareaRef.current) {
+          noteTextareaRef.current.value = checklistNoteBuffer;
+          noteTextareaRef.current.focus();
+        }
         console.log('[메모모달] 포커스 설정 완료', {
-          focused: document.activeElement === noteTextareaRef.current
+          focused: document.activeElement === noteTextareaRef.current,
+          value: noteTextareaRef.current?.value
         });
       }, 0);
     }
-  }, [isNoteModalOpen, isNotePreviewing]);
+  }, [isNoteModalOpen, isNotePreviewing, checklistNoteBuffer]);
 
   if (!localRow || !isOpen) return null;
 
@@ -472,37 +476,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               // Edit Mode
               <textarea
                 ref={noteTextareaRef}
-                value={checklistNoteBuffer}
-                onChange={(e) => {
-                  console.log('[메모모달] onChange 호출', {
-                    isComposing,
-                    inputValue: e.target.value,
-                    currentBuffer: checklistNoteBuffer
+                defaultValue={checklistNoteBuffer}
+                onBlur={(e) => {
+                  console.log('[메모모달] onBlur 호출', {
+                    finalValue: e.target.value
                   });
-                  if (!isComposing) {
-                    console.log('[메모모달] 상태 업데이트 실행');
-                    setChecklistNoteBuffer(e.target.value);
-                  } else {
-                    console.log('[메모모달] 조합 중이라 업데이트 차단');
-                  }
-                }}
-                onCompositionStart={() => {
-                  console.log('[메모모달] Composition 시작');
-                  setIsComposing(true);
-                }}
-                onCompositionEnd={(e) => {
-                  console.log('[메모모달] Composition 종료', {
-                    finalValue: e.currentTarget.value,
-                    currentBuffer: checklistNoteBuffer
-                  });
-                  setIsComposing(false);
-                  setChecklistNoteBuffer(e.currentTarget.value);
+                  setChecklistNoteBuffer(e.target.value);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey && !isComposing) {
+                  if (e.key === 'Enter' && e.ctrlKey) {
                     e.preventDefault();
                     saveChecklistNote();
-                  } else if (e.key === 'Escape' && !isComposing) {
+                  } else if (e.key === 'Escape') {
                     exitEditMode();
                   }
                 }}
@@ -996,34 +981,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </div>
               {isEditingNote ? (
                 <textarea
-                  value={noteEditBuffer}
-                  onChange={(e) => {
-                    console.log('[NOTE모바일] onChange 호출', {
-                      isComposing,
-                      inputValue: e.target.value,
-                      currentBuffer: noteEditBuffer
+                  defaultValue={noteEditBuffer}
+                  onBlur={(e) => {
+                    console.log('[NOTE모바일] onBlur 호출', {
+                      finalValue: e.target.value
                     });
-                    if (!isComposing) {
-                      console.log('[NOTE모바일] 상태 업데이트 실행');
-                      setNoteEditBuffer(e.target.value);
-                    } else {
-                      console.log('[NOTE모바일] 조합 중이라 업데이트 차단');
-                    }
-                  }}
-                  onCompositionStart={() => {
-                    console.log('[NOTE모바일] Composition 시작');
-                    setIsComposing(true);
-                  }}
-                  onCompositionEnd={(e) => {
-                    console.log('[NOTE모바일] Composition 종료', {
-                      finalValue: e.currentTarget.value,
-                      currentBuffer: noteEditBuffer
-                    });
-                    setIsComposing(false);
-                    setNoteEditBuffer(e.currentTarget.value);
+                    setNoteEditBuffer(e.target.value);
                   }}
                   className="flex-1 w-full p-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none"
                   placeholder="메모를 입력하세요..."
+                  autoFocus
                 />
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 border border-gray-200 rounded-md bg-gray-50 cursor-text" onDoubleClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }}>
@@ -1458,34 +1425,16 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </div>
             {isEditingNote ? (
               <textarea
-                value={noteEditBuffer}
-                onChange={(e) => {
-                  console.log('[NOTE데스크톱] onChange 호출', {
-                    isComposing,
-                    inputValue: e.target.value,
-                    currentBuffer: noteEditBuffer
+                defaultValue={noteEditBuffer}
+                onBlur={(e) => {
+                  console.log('[NOTE데스크톱] onBlur 호출', {
+                    finalValue: e.target.value
                   });
-                  if (!isComposing) {
-                    console.log('[NOTE데스크톱] 상태 업데이트 실행');
-                    setNoteEditBuffer(e.target.value);
-                  } else {
-                    console.log('[NOTE데스크톱] 조합 중이라 업데이트 차단');
-                  }
-                }}
-                onCompositionStart={() => {
-                  console.log('[NOTE데스크톱] Composition 시작');
-                  setIsComposing(true);
-                }}
-                onCompositionEnd={(e) => {
-                  console.log('[NOTE데스크톱] Composition 종료', {
-                    finalValue: e.currentTarget.value,
-                    currentBuffer: noteEditBuffer
-                  });
-                  setIsComposing(false);
-                  setNoteEditBuffer(e.currentTarget.value);
+                  setNoteEditBuffer(e.target.value);
                 }}
                 className="flex-1 w-full p-4 mt-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none"
                 placeholder="메모를 입력하세요..."
+                autoFocus
               />
             ) : (
               <div className="flex-1 overflow-y-auto p-4 mt-3 border border-gray-200 rounded-md bg-gray-50 cursor-text" onDoubleClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }}>
