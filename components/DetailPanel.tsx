@@ -121,6 +121,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [editingNoteChecklistId, setEditingNoteChecklistId] = useState<string | null>(null);
   const [checklistNoteBuffer, setChecklistNoteBuffer] = useState('');
   const [isNotePreviewing, setIsNotePreviewing] = useState(false);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Category Management State
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -339,6 +340,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   const enterEditMode = () => {
     setIsNotePreviewing(false);
+    // Focus on textarea after state update
+    setTimeout(() => {
+      noteTextareaRef.current?.focus();
+      noteTextareaRef.current?.select();
+    }, 0);
   };
 
   const exitEditMode = () => {
@@ -441,6 +447,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             ) : (
               // Edit Mode
               <textarea
+                ref={noteTextareaRef}
                 autoFocus
                 value={checklistNoteBuffer}
                 onChange={(e) => setChecklistNoteBuffer(e.target.value)}
@@ -1548,6 +1555,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 ) : (
                   // Edit Mode
                   <textarea
+                    ref={noteTextareaRef}
                     autoFocus
                     value={checklistNoteBuffer}
                     onChange={(e) => setChecklistNoteBuffer(e.target.value)}
