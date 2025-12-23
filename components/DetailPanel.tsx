@@ -395,12 +395,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         onClick={closeChecklistNoteModal}
       >
         <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[96vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800">체크리스트 메모</h3>
+          {/* Close Button */}
+          <div className="flex justify-end p-4">
             <button
               onClick={closeChecklistNoteModal}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -409,15 +408,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </button>
           </div>
 
-          {/* Checklist Preview */}
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-            <p className="text-sm text-gray-600 line-clamp-2">
-              {localRow?._checklists.find(c => c.id === editingNoteChecklistId)?.text}
-            </p>
-          </div>
-
           {/* Textarea */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 px-6 pb-6 overflow-y-auto">
             <textarea
               autoFocus
               value={checklistNoteBuffer}
@@ -430,7 +422,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                   closeChecklistNoteModal();
                 }
               }}
-              className="w-full h-full min-h-[200px] p-4 border-2 border-orange-300 rounded-md
+              className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
                          text-sm focus:outline-none focus:border-orange-500 resize-none"
               placeholder="메모를 입력하세요..."
             />
@@ -1480,12 +1472,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             onClick={closeChecklistNoteModal}
           >
             <div
-              className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[96vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-bold text-gray-800">체크리스트 메모</h3>
+              {/* Close Button */}
+              <div className="flex justify-end p-4">
                 <button
                   onClick={closeChecklistNoteModal}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1494,15 +1485,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </button>
               </div>
 
-              {/* Checklist Preview */}
-              <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {localRow?._checklists.find(c => c.id === editingNoteChecklistId)?.text}
-                </p>
-              </div>
-
               {/* Textarea */}
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 px-6 pb-6 overflow-y-auto">
                 <textarea
                   autoFocus
                   value={checklistNoteBuffer}
@@ -1515,7 +1499,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                       closeChecklistNoteModal();
                     }
                   }}
-                  className="w-full h-full min-h-[200px] p-4 border-2 border-orange-300 rounded-md
+                  className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
                              text-sm focus:outline-none focus:border-orange-500 resize-none"
                   placeholder="메모를 입력하세요..."
                 />
