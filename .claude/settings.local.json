@@ -41,7 +41,8 @@
       "Bash(powershell -Command \"Stop-Process -Name node -Force 2>&1; Start-Sleep -Seconds 2; Write-Host ''Node processes terminated''\")",
       "Bash(powershell -Command \"Stop-Process -Name node -Force 2>&1; Start-Sleep -Seconds 2\")",
       "Bash(powershell -Command:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(del \"nul\")"
     ],
     "deny": [],
     "ask": []

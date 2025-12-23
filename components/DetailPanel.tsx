@@ -121,6 +121,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [editingNoteChecklistId, setEditingNoteChecklistId] = useState<string | null>(null);
   const [checklistNoteBuffer, setChecklistNoteBuffer] = useState('');
   const [isNotePreviewing, setIsNotePreviewing] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Category Management State
@@ -388,6 +389,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setEditingNoteChecklistId(null);
     setChecklistNoteBuffer('');
     setIsNotePreviewing(false);
+    setIsComposing(false);
   };
 
   const clearChecklistNote = () => {
@@ -454,12 +456,21 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <textarea
                 ref={noteTextareaRef}
                 value={checklistNoteBuffer}
-                onChange={(e) => setChecklistNoteBuffer(e.target.value)}
+                onChange={(e) => {
+                  if (!isComposing) {
+                    setChecklistNoteBuffer(e.target.value);
+                  }
+                }}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={(e) => {
+                  setIsComposing(false);
+                  setChecklistNoteBuffer((e.target as HTMLTextAreaElement).value);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey) {
+                  if (e.key === 'Enter' && e.ctrlKey && !isComposing) {
                     e.preventDefault();
                     saveChecklistNote();
-                  } else if (e.key === 'Escape') {
+                  } else if (e.key === 'Escape' && !isComposing) {
                     exitEditMode();
                   }
                 }}
@@ -1529,105 +1540,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </button>
             </div>
           </div>
-        {/* Checklist Note Modal - 모바일 */}
-        {isNoteModalOpen && editingNoteChecklistId && (
-          <div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4"
-            onClick={closeChecklistNoteModal}
-          >
-            <div
-              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[96vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close Button */}
-              <div className="flex justify-end p-4">
-                <button
-                  onClick={closeChecklistNoteModal}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 px-6 pb-6 overflow-y-auto">
-                {isNotePreviewing ? (
-                  // Preview Mode
-                  <div className="whitespace-pre-wrap text-sm text-gray-800 break-words min-h-[400px] p-4 border-2 border-gray-300 rounded-md bg-gray-50">
-                    {checklistNoteBuffer}
-                  </div>
-                ) : (
-                  // Edit Mode
-                  <textarea
-                    ref={noteTextareaRef}
-                    value={checklistNoteBuffer}
-                    onChange={(e) => setChecklistNoteBuffer(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.ctrlKey) {
-                        e.preventDefault();
-                        saveChecklistNote();
-                      } else if (e.key === 'Escape') {
-                        exitEditMode();
-                      }
-                    }}
-                    className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
-                               text-sm focus:outline-none focus:border-orange-500 resize-none"
-                    placeholder="메모를 입력하세요..."
-                  />
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
-                {isNotePreviewing ? (
-                  <>
-                    <button
-                      onClick={closeChecklistNoteModal}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                                 text-sm font-medium hover:bg-gray-50 transition-colors"
-                    >
-                      닫기
-                    </button>
-                    <button
-                      onClick={enterEditMode}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
-                                 font-medium hover:bg-orange-700 transition-colors shadow-sm"
-                    >
-                      <Edit className="w-4 h-4 inline mr-1" />
-                      수정
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={clearChecklistNote}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                                 text-sm font-medium hover:bg-gray-50 transition-colors"
-                    >
-                      <RotateCcw className="w-4 h-4 inline mr-1" />
-                      초기화
-                    </button>
-                    <button
-                      onClick={exitEditMode}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                                 text-sm font-medium hover:bg-gray-50 transition-colors"
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={saveChecklistNote}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
-                                 font-medium hover:bg-orange-700 transition-colors shadow-sm"
-                    >
-                      <Save className="w-4 h-4 inline mr-1" />
-                      저장
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
         </div>
       )}
 
