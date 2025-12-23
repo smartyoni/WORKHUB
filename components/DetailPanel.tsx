@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { RowData, Column, ChecklistItem, Reply, ColumnType, CategoryGroup, CategoryItem, GanttTask } from '../types';
-import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft, Copy, RotateCcw, StickyNote } from 'lucide-react';
+import { X, Edit2, CheckSquare, Plus, Trash2, Save, ChevronDown, ChevronUp, Settings, ChevronLeft, Copy, RotateCcw, StickyNote, Edit } from 'lucide-react';
 import GanttView from './GanttView';
 
 /**
@@ -120,6 +120,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [editingNoteChecklistId, setEditingNoteChecklistId] = useState<string | null>(null);
   const [checklistNoteBuffer, setChecklistNoteBuffer] = useState('');
+  const [isNotePreviewing, setIsNotePreviewing] = useState(false);
 
   // Category Management State
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -332,6 +333,22 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setEditingNoteChecklistId(checklistId);
     setChecklistNoteBuffer(item.note || '');
     setIsNoteModalOpen(true);
+    // 메모가 있으면 미리보기 모드로 열기, 없으면 편집 모드로 열기
+    setIsNotePreviewing(!!item.note);
+  };
+
+  const enterEditMode = () => {
+    setIsNotePreviewing(false);
+  };
+
+  const exitEditMode = () => {
+    const item = localRow?._checklists.find(c => c.id === editingNoteChecklistId);
+    // 메모가 있으면 미리보기로, 없으면 모달 종료
+    if (item?.note) {
+      setIsNotePreviewing(true);
+    } else {
+      closeChecklistNoteModal();
+    }
   };
 
   const saveChecklistNote = () => {
@@ -347,13 +364,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     setLocalRow(updatedRow);
     onUpdate(updatedRow);
 
-    closeChecklistNoteModal();
+    // 저장 후 메모가 있으면 미리보기로, 없으면 모달 종료
+    if (checklistNoteBuffer.trim()) {
+      setIsNotePreviewing(true);
+    } else {
+      closeChecklistNoteModal();
+    }
   };
 
   const closeChecklistNoteModal = () => {
     setIsNoteModalOpen(false);
     setEditingNoteChecklistId(null);
     setChecklistNoteBuffer('');
+    setIsNotePreviewing(false);
   };
 
   const clearChecklistNote = () => {
@@ -408,51 +431,81 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </button>
           </div>
 
-          {/* Textarea */}
+          {/* Content */}
           <div className="flex-1 px-6 pb-6 overflow-y-auto">
-            <textarea
-              autoFocus
-              value={checklistNoteBuffer}
-              onChange={(e) => setChecklistNoteBuffer(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                  e.preventDefault();
-                  saveChecklistNote();
-                } else if (e.key === 'Escape') {
-                  closeChecklistNoteModal();
-                }
-              }}
-              className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
-                         text-sm focus:outline-none focus:border-orange-500 resize-none"
-              placeholder="메모를 입력하세요..."
-            />
+            {isNotePreviewing ? (
+              // Preview Mode
+              <div className="whitespace-pre-wrap text-sm text-gray-800 break-words min-h-[400px] p-4 border-2 border-gray-300 rounded-md bg-gray-50">
+                {checklistNoteBuffer}
+              </div>
+            ) : (
+              // Edit Mode
+              <textarea
+                autoFocus
+                value={checklistNoteBuffer}
+                onChange={(e) => setChecklistNoteBuffer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    saveChecklistNote();
+                  } else if (e.key === 'Escape') {
+                    exitEditMode();
+                  }
+                }}
+                className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
+                           text-sm focus:outline-none focus:border-orange-500 resize-none"
+                placeholder="메모를 입력하세요..."
+              />
+            )}
           </div>
 
           {/* Footer */}
           <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
-            <button
-              onClick={clearChecklistNote}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                         text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4 inline mr-1" />
-              초기화
-            </button>
-            <button
-              onClick={closeChecklistNoteModal}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                         text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-            <button
-              onClick={saveChecklistNote}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
-                         font-medium hover:bg-orange-700 transition-colors shadow-sm"
-            >
-              <Save className="w-4 h-4 inline mr-1" />
-              저장
-            </button>
+            {isNotePreviewing ? (
+              <>
+                <button
+                  onClick={closeChecklistNoteModal}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                             text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  닫기
+                </button>
+                <button
+                  onClick={enterEditMode}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
+                             font-medium hover:bg-orange-700 transition-colors shadow-sm"
+                >
+                  <Edit className="w-4 h-4 inline mr-1" />
+                  수정
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={clearChecklistNote}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                             text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4 inline mr-1" />
+                  초기화
+                </button>
+                <button
+                  onClick={exitEditMode}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                             text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={saveChecklistNote}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
+                             font-medium hover:bg-orange-700 transition-colors shadow-sm"
+                >
+                  <Save className="w-4 h-4 inline mr-1" />
+                  저장
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>,
@@ -1485,51 +1538,81 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </button>
               </div>
 
-              {/* Textarea */}
+              {/* Content */}
               <div className="flex-1 px-6 pb-6 overflow-y-auto">
-                <textarea
-                  autoFocus
-                  value={checklistNoteBuffer}
-                  onChange={(e) => setChecklistNoteBuffer(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.ctrlKey) {
-                      e.preventDefault();
-                      saveChecklistNote();
-                    } else if (e.key === 'Escape') {
-                      closeChecklistNoteModal();
-                    }
-                  }}
-                  className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
-                             text-sm focus:outline-none focus:border-orange-500 resize-none"
-                  placeholder="메모를 입력하세요..."
-                />
+                {isNotePreviewing ? (
+                  // Preview Mode
+                  <div className="whitespace-pre-wrap text-sm text-gray-800 break-words min-h-[400px] p-4 border-2 border-gray-300 rounded-md bg-gray-50">
+                    {checklistNoteBuffer}
+                  </div>
+                ) : (
+                  // Edit Mode
+                  <textarea
+                    autoFocus
+                    value={checklistNoteBuffer}
+                    onChange={(e) => setChecklistNoteBuffer(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.ctrlKey) {
+                        e.preventDefault();
+                        saveChecklistNote();
+                      } else if (e.key === 'Escape') {
+                        exitEditMode();
+                      }
+                    }}
+                    className="w-full h-full min-h-[400px] p-4 border-2 border-orange-300 rounded-md
+                               text-sm focus:outline-none focus:border-orange-500 resize-none"
+                    placeholder="메모를 입력하세요..."
+                  />
+                )}
               </div>
 
               {/* Footer */}
               <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
-                <button
-                  onClick={clearChecklistNote}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                             text-sm font-medium hover:bg-gray-50 transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4 inline mr-1" />
-                  초기화
-                </button>
-                <button
-                  onClick={closeChecklistNoteModal}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                             text-sm font-medium hover:bg-gray-50 transition-colors"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={saveChecklistNote}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
-                             font-medium hover:bg-orange-700 transition-colors shadow-sm"
-                >
-                  <Save className="w-4 h-4 inline mr-1" />
-                  저장
-                </button>
+                {isNotePreviewing ? (
+                  <>
+                    <button
+                      onClick={closeChecklistNoteModal}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                                 text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      닫기
+                    </button>
+                    <button
+                      onClick={enterEditMode}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
+                                 font-medium hover:bg-orange-700 transition-colors shadow-sm"
+                    >
+                      <Edit className="w-4 h-4 inline mr-1" />
+                      수정
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={clearChecklistNote}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                                 text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4 inline mr-1" />
+                      초기화
+                    </button>
+                    <button
+                      onClick={exitEditMode}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                                 text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={saveChecklistNote}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm
+                                 font-medium hover:bg-orange-700 transition-colors shadow-sm"
+                    >
+                      <Save className="w-4 h-4 inline mr-1" />
+                      저장
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
