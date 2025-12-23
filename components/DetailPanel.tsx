@@ -457,14 +457,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 ref={noteTextareaRef}
                 value={checklistNoteBuffer}
                 onChange={(e) => {
-                  if (!isComposing) {
-                    setChecklistNoteBuffer(e.target.value);
-                  }
+                  setChecklistNoteBuffer(e.target.value);
                 }}
                 onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={(e) => {
+                onCompositionEnd={() => {
                   setIsComposing(false);
-                  setChecklistNoteBuffer((e.target as HTMLTextAreaElement).value);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.ctrlKey && !isComposing) {
