@@ -145,9 +145,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   // Handle memo textarea focus when entering edit mode
   useEffect(() => {
+    console.log('[메모모달] useEffect - 포커스 처리', {
+      isNoteModalOpen,
+      isNotePreviewing,
+      hasRef: !!noteTextareaRef.current
+    });
     if (isNoteModalOpen && !isNotePreviewing) {
       setTimeout(() => {
+        console.log('[메모모달] textarea에 포커스 설정 시도');
         noteTextareaRef.current?.focus();
+        console.log('[메모모달] 포커스 설정 완료', {
+          focused: document.activeElement === noteTextareaRef.current
+        });
       }, 0);
     }
   }, [isNoteModalOpen, isNotePreviewing]);
@@ -338,9 +347,17 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   // Checklist Note Functions
   const openChecklistNoteModal = (checklistId: string) => {
+    console.log('[메모모달] 모달 열림', { checklistId });
     const item = localRow?._checklists.find(c => c.id === checklistId);
-    if (!item) return;
+    if (!item) {
+      console.log('[메모모달] 항목을 찾을 수 없음');
+      return;
+    }
 
+    console.log('[메모모달] 초기값 설정', {
+      note: item.note,
+      hasNote: !!item.note
+    });
     setEditingNoteChecklistId(checklistId);
     setChecklistNoteBuffer(item.note || '');
     setIsNoteModalOpen(true);
@@ -457,12 +474,27 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 ref={noteTextareaRef}
                 value={checklistNoteBuffer}
                 onChange={(e) => {
+                  console.log('[메모모달] onChange 호출', {
+                    isComposing,
+                    inputValue: e.target.value,
+                    currentBuffer: checklistNoteBuffer
+                  });
                   if (!isComposing) {
+                    console.log('[메모모달] 상태 업데이트 실행');
                     setChecklistNoteBuffer(e.target.value);
+                  } else {
+                    console.log('[메모모달] 조합 중이라 업데이트 차단');
                   }
                 }}
-                onCompositionStart={() => setIsComposing(true)}
+                onCompositionStart={() => {
+                  console.log('[메모모달] Composition 시작');
+                  setIsComposing(true);
+                }}
                 onCompositionEnd={(e) => {
+                  console.log('[메모모달] Composition 종료', {
+                    finalValue: e.currentTarget.value,
+                    currentBuffer: checklistNoteBuffer
+                  });
                   setIsComposing(false);
                   setChecklistNoteBuffer(e.currentTarget.value);
                 }}
@@ -966,12 +998,27 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 <textarea
                   value={noteEditBuffer}
                   onChange={(e) => {
+                    console.log('[NOTE모바일] onChange 호출', {
+                      isComposing,
+                      inputValue: e.target.value,
+                      currentBuffer: noteEditBuffer
+                    });
                     if (!isComposing) {
+                      console.log('[NOTE모바일] 상태 업데이트 실행');
                       setNoteEditBuffer(e.target.value);
+                    } else {
+                      console.log('[NOTE모바일] 조합 중이라 업데이트 차단');
                     }
                   }}
-                  onCompositionStart={() => setIsComposing(true)}
+                  onCompositionStart={() => {
+                    console.log('[NOTE모바일] Composition 시작');
+                    setIsComposing(true);
+                  }}
                   onCompositionEnd={(e) => {
+                    console.log('[NOTE모바일] Composition 종료', {
+                      finalValue: e.currentTarget.value,
+                      currentBuffer: noteEditBuffer
+                    });
                     setIsComposing(false);
                     setNoteEditBuffer(e.currentTarget.value);
                   }}
@@ -1413,12 +1460,27 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <textarea
                 value={noteEditBuffer}
                 onChange={(e) => {
+                  console.log('[NOTE데스크톱] onChange 호출', {
+                    isComposing,
+                    inputValue: e.target.value,
+                    currentBuffer: noteEditBuffer
+                  });
                   if (!isComposing) {
+                    console.log('[NOTE데스크톱] 상태 업데이트 실행');
                     setNoteEditBuffer(e.target.value);
+                  } else {
+                    console.log('[NOTE데스크톱] 조합 중이라 업데이트 차단');
                   }
                 }}
-                onCompositionStart={() => setIsComposing(true)}
+                onCompositionStart={() => {
+                  console.log('[NOTE데스크톱] Composition 시작');
+                  setIsComposing(true);
+                }}
                 onCompositionEnd={(e) => {
+                  console.log('[NOTE데스크톱] Composition 종료', {
+                    finalValue: e.currentTarget.value,
+                    currentBuffer: noteEditBuffer
+                  });
                   setIsComposing(false);
                   setNoteEditBuffer(e.currentTarget.value);
                 }}
