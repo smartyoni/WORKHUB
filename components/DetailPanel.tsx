@@ -457,11 +457,14 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 ref={noteTextareaRef}
                 value={checklistNoteBuffer}
                 onChange={(e) => {
-                  setChecklistNoteBuffer(e.target.value);
+                  if (!isComposing) {
+                    setChecklistNoteBuffer(e.target.value);
+                  }
                 }}
                 onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={() => {
+                onCompositionEnd={(e) => {
                   setIsComposing(false);
+                  setChecklistNoteBuffer(e.currentTarget.value);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.ctrlKey && !isComposing) {
@@ -960,7 +963,21 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 </div>
               </div>
               {isEditingNote ? (
-                <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
+                <textarea
+                  value={noteEditBuffer}
+                  onChange={(e) => {
+                    if (!isComposing) {
+                      setNoteEditBuffer(e.target.value);
+                    }
+                  }}
+                  onCompositionStart={() => setIsComposing(true)}
+                  onCompositionEnd={(e) => {
+                    setIsComposing(false);
+                    setNoteEditBuffer(e.currentTarget.value);
+                  }}
+                  className="flex-1 w-full p-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none"
+                  placeholder="메모를 입력하세요..."
+                />
               ) : (
                 <div className="flex-1 overflow-y-auto p-3 border border-gray-200 rounded-md bg-gray-50 cursor-text" onDoubleClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }}>
                   {localRow._notes ? (
@@ -1393,7 +1410,21 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </div>
             </div>
             {isEditingNote ? (
-              <textarea value={noteEditBuffer} onChange={(e) => setNoteEditBuffer(e.target.value)} className="flex-1 w-full p-4 mt-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none" placeholder="메모를 입력하세요..." />
+              <textarea
+                value={noteEditBuffer}
+                onChange={(e) => {
+                  if (!isComposing) {
+                    setNoteEditBuffer(e.target.value);
+                  }
+                }}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={(e) => {
+                  setIsComposing(false);
+                  setNoteEditBuffer(e.currentTarget.value);
+                }}
+                className="flex-1 w-full p-4 mt-3 border-2 border-orange-300 rounded-md text-sm focus:outline-none focus:border-orange-500 resize-none"
+                placeholder="메모를 입력하세요..."
+              />
             ) : (
               <div className="flex-1 overflow-y-auto p-4 mt-3 border border-gray-200 rounded-md bg-gray-50 cursor-text" onDoubleClick={() => { setIsEditingNote(true); setNoteEditBuffer(localRow._notes || ''); }}>
                 {localRow._notes ? (
