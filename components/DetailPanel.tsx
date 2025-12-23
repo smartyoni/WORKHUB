@@ -343,7 +343,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     // Focus on textarea after state update
     setTimeout(() => {
       noteTextareaRef.current?.focus();
-      noteTextareaRef.current?.select();
     }, 0);
   };
 
